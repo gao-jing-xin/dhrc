@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html id="ng-app" lang="zh-CN" ng-app="myUserManage" ng-strict-di>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>德合睿创 - 用户管理</title>
+    <link href="bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/my.css" rel="stylesheet">
+
+    <script src="bower_components/angular/angular.min.js"></script>
+    <script src="bower_components/angular-i18n/angular-locale_zh-cn.js"></script>
+    <script src="bower_components/angular-cookies/angular-cookies.min.js"></script>
+    <script src="bower_components/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
+    <script src="bower_components/angular-bindonce/bindonce.min.js"></script>
+    <script src="js/my-base.js"></script>
+    <script src="js/my-user.js"></script>
+    <script>
+        (function () {
+            var m = angular.module("myUserManage", ["myBase", "myUser"]);
+            m.controller("UserManageController", ["$scope", "user", "userDlg", function ($scope, user, userDlg) {
+                $scope.user = user;
+                $scope.state = "autoLogin";
+                $scope.userDlg = userDlg;
+                user.tryAutoLogin(function () {
+                    if (!user.hasLogin()) {
+                        userDlg();
+                    }
+                });
+            }]);
+        })();
+    </script>
+</head>
+<body>
+<script type="text/ng-template" id="/template/user-mng/please-login.html">
+    用户未登录，请先<a href="#" ng-click="userDlg('login')">登录</a>。
+
+
+</script>
+<script type="text/ng-template" id="/template/user-mng/not-admin.html">
+    对不起，您没有管理用户的权限。请选择其他用户登录<a href="#" ng-click="userDlg('login')">。
+
+
+</script>
+<script type="text/ng-template" id="/template/user-mng/user-list.html">
+
+</script>
+<div class="container" bindonce ng-controller="UserManageController">
+    <div class="row">
+        <label>用户管理</label>
+
+        <div>
+            <table>
+                <thead>
+
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html id="ng-app" lang="zh-CN" ng-app="myUserSignIn" ng-strict-di>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>德合睿创 - 用户注册</title>
+    <link href="bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/my.css" rel="stylesheet">
+
+    <script src="bower_components/angular/angular.min.js"></script>
+    <script src="bower_components/angular-i18n/angular-locale_zh-cn.js"></script>
+    <script src="bower_components/angular-cookies/angular-cookies.min.js"></script>
+    <script src="bower_components/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
+    <script src="bower_components/angular-bindonce/bindonce.min.js"></script>
+    <script src="js/my-base.js"></script>
+    <script src="js/my-user.js"></script>
+    <script>
+        (function () {
+            var m = angular.module("myUserSignIn", ["myBase", "myUser"]);
+            m.controller("SignInController", ["$scope", "user", "userInput", "serverCall", "Input", function ($scope, user, userInput, serverCall, Input) {
+                userInput.newUserName($scope);
+                userInput.newPassword($scope);
+                userInput.newPassword2($scope);
+                userInput.newSex($scope, '男');
+                userInput.newCompany($scope);
+                userInput.newPhoneNo($scope);
+                userInput.newQQ($scope);
+                $scope.step = 1;
+                $scope.signIn = function () {
+                    if (userInput.hasError($scope.userName, $scope.password,
+                                    $scope.password2, $scope.sex, $scope.company, $scope.phoneNo, $scope.qq)) {
+                        return;
+                    }
+                    $scope.signIn.enable = false;
+                    serverCall("userSignIn", {
+                        userName: $scope.userName.value,
+                        password: $scope.password.value,
+                        company: $scope.company.value,
+                        sex: $scope.sex.value,
+                        phoneNo: $scope.phoneNo.value,
+                        qq: $scope.qq.value
+                    }, function (result) {
+                        Input.assignResult($scope, result);
+                        if (result.success) {
+                            $scope.step = 2;
+                        }
+                    }, function () {
+                        $scope.signIn.enable = true;
+                    });
+                };
+            }]);
+        })();
+    </script>
+</head>
+<body>
+<header>
+    <div class="container">
+        <img class="logo" src="./images/logo.png" alt="德合睿创" title="德合睿创">
+        <ul class="menu">
+            <li><a href="index.html">首页</a></li>
+            <li><img src="./images/footerGeDuan.png"></li>
+            <li><a href="aboutUs.html">关于我们</a></li>
+            <li><img src="./images/footerGeDuan.png"></li>
+            <li><a href="contactUs.html">联系我们</a></li>
+            <li><img src="./images/footerGeDuan.png"></li>
+            <li><a href="enquiry.html">询价</a></li>
+        </ul>
+    </div>
+</header>
+
+<div class="row" ng-controller="SignInController">
+    <form class="col-lg-offset-4 col-lg-4 col-md-offset-3 col-md-6">
+        <h3>用户注册</h3>
+        <div style="margin-bottom: 20px">
+            <div class="step" ng-class="{'selected':step===1}">
+                <span class="text">1. 填写信息</span>
+                <span class="arrow"></span>
+            </div>
+            <div class="step" ng-class="{'selected':step===2}">
+                <span class="arrow-start"></span>
+                <span class="text">2. 验证邮箱</span>
+                <span class="arrow"></span>
+            </div>
+            <div class="step">
+                <span class="arrow-start"></span>
+                <span class="text">3. 完成注册</span>
+            </div>
+            <div class="clear"></div>
+        </div>
+        <div ng-show="step==1">
+            <div my-input="userName" my-icon-class="glyphicon-user">电子邮箱<br>(作为登录名并接收报价)</div>
+            <div my-input="password" my-icon-class="glyphicon-asterisk" my-input-type="password">登录密码</div>
+            <div my-input="password2" my-icon-class="glyphicon-asterisk" my-input-type="password">密码确认</div>
+            <div class="form-group">
+                <label>性别</label>
+                <label class="radio-inline">
+                    <input type="radio" ng-model="sex.value" value="男"> 男 <br/>
+                </label>
+                <label class="radio-inline">
+                    <input type="radio" ng-model="sex.value" value="女"> 女 <br/>
+                </label>
+            </div>
+            <div my-input="company" my-icon-class="glyphicon-briefcase">公司</div>
+            <div my-input="phoneNo" my-icon-class="glyphicon-earphone">电话</div>
+            <div my-input="qq" my-icon-class="glyphicon-heart-empty">QQ(号码或注册邮箱)</div>
+            <button class="btn btn-block btn-primary" ng-click="signIn()">注 册</button>
+        </div>
+        <div ng-show="step==2">
+            <div class="alert alert-success" role="alert">注册激活邮件已发出，一小时内有效，请激活注册！</div>
+            <a href="/index.html">跳转到首页</a>
+        </div>
+    </form>
+</div>
+<div class="copy-right">
+    Copyright © 2014-2015 德合睿创
+</div>
+
+</body>
+</html>

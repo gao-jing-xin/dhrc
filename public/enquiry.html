@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html id="ng-app" lang="zh-CN" ng-app="myEnquiry" ng-strict-di>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>德合睿创 - 询价 - 1.选择公众号</title>
+    <link href="bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/my.css" rel="stylesheet">
+
+    <script src="bower_components/jquery/dist/jquery.min.js"></script>
+    <script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="bower_components/angular/angular.min.js"></script>
+    <script src="bower_components/angular-i18n/angular-locale_zh-cn.js"></script>
+    <script src="bower_components/angular-cookies/angular-cookies.min.js"></script>
+    <script src="bower_components/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
+    <script src="bower_components/angular-bindonce/bindonce.min.js"></script>
+    <script src="js/my-base.js"></script>
+    <script src="js/my-user.js"></script>
+
+    <script>
+        (function () {
+            var m = angular.module("myEnquiry", ["myBase", "myUser"]);
+            m.controller("EnquiryController", ["$scope", "user", "userInput", "serverCall", "$modal", "$window", function ($scope, user, userInput, serverCall, $modal, $window) {
+
+                var orderID = undefined;
+                var orderVersion = undefined;
+                var cartItems = {};
+
+                function setCartItems(cItems) {
+                    cartItems = cItems;
+                    $scope.totalPrice = cItems.totalPrice;
+                    $scope.cartItemCount = cItems.count;
+                    delete cItems.totalPrice;
+                    delete cItems.count;
+                }
+
+                $scope.totalPrice = 0;
+                $scope.cartItemCount = 0;
+                $scope.selectGZH = function (item) {
+                    var selectedID = item.isSelected ? -item.id : item.id;
+
+                    serverCall('cartGZHSelect', {
+                        orderID: orderID,
+                        orderVersion: orderVersion,
+                        selectedID: selectedID
+                    }, function (result) {
+                        var s;
+                        if (s = result.success) {
+                            if (s.cartItems) {
+                                setCartItems(s.cartItems);
+                            } else if (item.isSelected = (selectedID > 0)) {
+                                cartItems[selectedID] = item.price;
+                                $scope.totalPrice += item.price;
+                                $scope.cartItemCount++;
+                            } else {
+                                delete cartItems[selectedID];
+                                $scope.totalPrice -= item.price;
+                                $scope.cartItemCount--;
+                            }
+                            orderVersion = s.orderVersion;
+                        }
+                    });
+                };
+                $scope.getLogoUrl = function (item) {
+                    return './logos/' + item.code + '.jpeg';
+                };
+                $scope.selectBtnTitle = function (item) {
+                    return item.isSelected ? '取消选择' : '选择';
+                };
+                var COUNT_PER_PAGE = $scope.COUNT_PER_PAGE = 30;
+                $scope.gzhs = [];
+                $scope.currentPage = 1;
+                $scope.totalCount = 0;
+                $scope.queryGZH = function () {
+                    var qid = ++$scope.queryGZH.queryId;
+                    serverCall("gzhQuery", {
+                        orderID: orderID,
+                        orderVersion: orderVersion,
+                        offset: ($scope.currentPage - 1) * COUNT_PER_PAGE,
+                        count: COUNT_PER_PAGE
+                    }, function (result) {
+                        if (qid != $scope.queryGZH.queryId) {
+                            return;
+                        }
+                        var s;
+                        if (s = result.success) {
+                            if (s.cartItems) {
+                                orderID = s.orderID;
+                                orderVersion = s.orderVersion;
+                                setCartItems(s.cartItems);
+                            }
+                            $scope.totalCount = s.totalCount;
+                            $scope.gzhs = s.rows;
+                            angular.forEach($scope.gzhs, function (item) {
+                                if (cartItems[item.id] !== undefined) {
+                                    item.isSelected = true;
+                                }
+                                if (item.hasLogo) {
+                                    item.logo = item.code + '.jpg';
+                                } else {
+                                    item.logo = '_default_.jpg';
+                                }
+                            });
+                        } else {
+                            $scope.errorMsg = result.errors.error;
+                            $scope.gzhs = [];
+                        }
+                    });
+                };
+                $scope.queryGZH.queryId = 0;
+                $scope.$on("userStateChanged", function () {
+                    if (user.hasLogin()) {
+                        $scope.queryGZH();
+                    }
+                });
+                user.tryAutoLogin(function () {
+                    $scope.$broadcast("userStateChanged");
+                });
+            }]);
+        })();
+    </script>
+</head>
+<body bindonce ng-controller="EnquiryController">
+<header>
+    <div class="container">
+        <img class="logo" src="./images/logo.png" alt="德合睿创" title="德合睿创">
+        <ul class="menu">
+            <li><a href="index.html">首页</a></li>
+            <li><img src="./images/footerGeDuan.png"></li>
+            <li><a href="aboutUs.html">关于我们</a></li>
+            <li><img src="./images/footerGeDuan.png"></li>
+            <li><a href="contactUs.html">联系我们</a></li>
+            <li><img src="./images/footerGeDuan.png"></li>
+            <li class="selected">询价</li>
+        </ul>
+    </div>
+</header>
+<div class="head-bar">
+    <div data-spy="affix" data-offset-top="70">
+        <div class="container">
+            <div class="head-bar-content">
+                <div class="steps">
+                    <div class="step selected">
+                        <span class="text">1. 选择公众号</span>
+                        <span class="arrow"></span>
+                    </div>
+                    <div class="step">
+                        <span class="arrow-start"></span>
+                        <span class="text">2. 完善信息</span>
+                        <span class="arrow"></span>
+                    </div>
+                    <div class="step">
+                        <span class="arrow-start"></span>
+                        <span class="text">3. 提交询价</span>
+                    </div>
+                </div>
+
+                <div class="shopping-cart">
+                    <div my-user-label></div>
+                    <i class="glyphicon glyphicon-shopping-cart"></i>
+                    <span class="badge" ng-bind="cartItemCount"></span>
+                    <span class="total-price"><span>¥</span><span ng-bind="totalPrice"></span></span>
+                    <a class="btn btn-primary" href="enquiry-step-2.html">下一步</a>
+                </div>
+                <div pagination total-items="totalCount" ng-model="currentPage" ng-change="queryGZH()" max-size="5"
+                     class="pagination-sm" boundary-links="true"
+                     previous-text="&lsaquo;" next-text="&rsaquo;" items-per-page="COUNT_PER_PAGE" first-text="&laquo;"
+                     last-text="&raquo;"></div>
+                <div class="clear"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container body">
+    <div>
+        <div class="gzh-item" ng-class="{'selected':item.isSelected}" ng-repeat="item in gzhs">
+            <div class="gzh-icon">
+                <img ng-src="./logos/{{item.logo}}">
+
+                <div class="gzh-type"><span class="badge">{{item.type}}</span></div>
+            </div>
+            <div class="gzh-info">
+                <div class="gzh-title"><span ng-attr-tooltip="微信ID：{{item.code}}">{{item.title}}</span></div>
+                <div class="gzh-fans">粉丝数：{{item.fans}}<span class="wan">万</span></div>
+                <div class="gzh-reads"><span tooltip="周 / 月">阅读量：{{item.rW}} / {{item.rM}}</span></div>
+            </div>
+            <div class="gzh-right">
+                <div class="gzh-price"><span>¥</span><span>{{item.price}}</span></div>
+                <div class="btn-gzh">
+                    <button class="btn btn-default btn-sm" ng-click="selectGZH(item)">{{selectBtnTitle(item)}}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div ng-bind="errorMsg" ng-show="errorMsg"></div>
+</div>
+<div class="copy-right">
+    Copyright © 2014-2015 德合睿创
+</div>
+
+</body>
+</html>

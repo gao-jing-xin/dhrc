@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html id="ng-app" lang="zh-CN" ng-app="myEnquiry" ng-strict-di>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>德合睿创 - 询价 - 2.完善信息</title>
+    <link href="bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/my.css" rel="stylesheet">
+
+    <script src="bower_components/jquery/dist/jquery.min.js"></script>
+    <script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="bower_components/angular/angular.min.js"></script>
+    <script src="bower_components/angular-i18n/angular-locale_zh-cn.js"></script>
+    <script src="bower_components/angular-cookies/angular-cookies.min.js"></script>
+    <script src="bower_components/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
+    <script src="bower_components/angular-bindonce/bindonce.min.js"></script>
+    <script src="js/my-base.js"></script>
+    <script src="js/my-user.js"></script>
+
+    <script>
+        (function () {
+            function nowAddDay(day) {
+                var dt = new Date();
+                dt.setTime(dt.getTime() + 1000 * 64 * 64 * 24 * day);
+                return dt;
+            }
+
+            var m = angular.module("myEnquiry", ["myBase", "myUser", "ui.bootstrap.datepicker"]);
+            m.controller("EnquiryController", ["$scope", "user", "Input", "serverCall", "$modal", "$window", function ($scope, user, Input, serverCall, $modal, $window) {
+                $scope.d2s = function (d) {
+                    return d.getFullYear() + ' 年 ' + (d.getMonth() + 1) + ' 月 ' + d.getDay() + ' 日';
+                };
+                $scope.selectDateStart = function (item) {
+
+                };
+                $scope.selectDateEnd = function (item) {
+
+                };
+                function resetOrder(o) {
+
+                    if (o) {
+                        var defaultDateStart = nowAddDay(7);
+                        var defaultDateEnd = nowAddDay(14);
+                        o.totalPrice = 0;
+                        angular.forEach(o.items, function (item) {
+                            if (item.hasLogo) {
+                                item.logo = item.code + '.jpg';
+                            } else {
+                                item.logo = '_default_.jpg';
+                            }
+                            if (!item.dateStart) {
+                                item.dateStart = defaultDateStart;
+                            }
+                            if (!item.dateEnd) {
+                                item.dateEnd = defaultDateEnd;
+                            }
+                            o.totalPrice += item.price
+                        });
+                        $scope.order = o;
+                        $scope.artTitle.resetValue(o.artTitle);
+                        $scope.artSubject.resetValue(o.artSubject);
+                        delete o.artSubject;
+                        delete o.artTitle;
+                    } else {
+
+                        $scope.order = {
+                            items: []
+                        }
+                    }
+                }
+
+                resetOrder();
+                $scope.artTitle = Input.newRequiredS();
+                $scope.artSubject = Input.newInput();
+                $scope.delItem = function (item) {
+                    var order = $scope.order;
+                    serverCall('cartGZHRemove', {
+                        orderID: order.id,
+                        orderVersion: order.version,
+                        gzhID: item.id
+                    }, function (result) {
+                        var s, i;
+                        if (s = result.success) {
+                            if (s.items) {
+                                resetOrder(s);
+                            } else {
+                                if ((i = order.items.indexOf(item)) >= 0) {
+                                    order.totalPrice -= item.price;
+                                    order.items.splice(i, 1);
+                                }
+                                order.version = s.version;
+                            }
+                        } else {
+                            $scope.errorMsg = result.errors.error;
+                        }
+                    });
+                };
+                $scope.getLogoUrl = function (item) {
+                    return './logos/' + item.code + '.jpeg';
+                };
+                $scope.queryCart = function () {
+                    serverCall("cartGet", {}, function (result) {
+                        if (result.success) {
+                            resetOrder(result.success);
+                        } else {
+                            $scope.errorMsg = result.errors.error;
+                            resetOrder();
+                        }
+                    });
+                };
+                $scope.commit = function () {
+                    var order = $scope.order;
+                    serverCall("cartCommit", {
+                        orderID: order.id,
+                        orderVersion: order.version,
+                        artTitle: $scope.artTitle.value,
+                        artSubject: $scope.artSubject.value
+                    }, function (result) {
+                        if (result.success) {
+                            $window.location.href = 'enquiry-end.html';
+                        } else {
+                            $scope.errorMsg = result.errors.error;
+                        }
+                    });
+                };
+                $scope.dpOpen = function (item, $event) {
+                    $event.preventDefault();
+                    $event.stopPropagation();
+                    item._dpOpened = true;
+                };
+                $scope.$on("userStateChanged", function () {
+                    if (user.hasLogin()) {
+                        $scope.queryCart();
+                    }
+                });
+                user.tryAutoLogin(function () {
+                    $scope.$broadcast("userStateChanged");
+                });
+            }]);
+        })();
+    </script>
+</head>
+<body bindonce ng-controller="EnquiryController">
+<header>
+    <div class="container">
+        <img class="logo" src="./images/logo.png" alt="德合睿创" title="德合睿创">
+        <ul class="menu">
+            <li><a href="index.html">首页</a></li>
+            <li><img src="./images/footerGeDuan.png"></li>
+            <li><a href="aboutUs.html">关于我们</a></li>
+            <li><img src="./images/footerGeDuan.png"></li>
+            <li><a href="contactUs.html">联系我们</a></li>
+            <li><img src="./images/footerGeDuan.png"></li>
+            <li class="selected">询价</li>
+        </ul>
+    </div>
+</header>
+<div class="head-bar">
+    <div data-spy="affix" data-offset-top="70">
+        <div class="container">
+            <div class="head-bar-content">
+                <div class="steps">
+                    <div class="step">
+                        <span class="text">1. 选择公众号</span>
+                        <span class="arrow"></span>
+                    </div>
+                    <div class="step selected">
+                        <span class="arrow-start"></span>
+                        <span class="text">2. 完善信息</span>
+                        <span class="arrow"></span>
+                    </div>
+                    <div class="step">
+                        <span class="arrow-start"></span>
+                        <span class="text">3. 提交询价</span>
+                    </div>
+                </div>
+
+                <div class="shopping-cart">
+
+                    <div my-user-label></div>
+                    <i class="glyphicon glyphicon-shopping-cart"></i>
+                    <span class="badge" ng-bind="order.items.length"></span>
+                    <span class="total-price"><span>¥</span><span ng-bind="order.totalPrice"></span></span>
+                    <a class="btn btn-default" href="enquiry.html">上一步</a>
+                    <a class="btn btn-primary" ng-click="commit()">提交询价请求</a>
+                </div>
+                <div class="clear"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="container xj-step2">
+    <div class="row xj-head">
+        <form class="form-horizontal">
+            <div class="form-group">
+                <label class="control-label col-lg-1">标题</label>
+
+                <div class="col-lg-7">
+                    <input type="text" class="form-control" ng-model="artTitle.value"
+                           ng-change="artTitle.onChanged()">
+                </div>
+                <label class="small col-lg-4" ng-show="artTitle.hasError()">
+                    &nbsp;<span class="glyphicon glyphicon-remove-circle"></span>&nbsp;{{artTitle.msg}}
+                </label>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-lg-1">摘要</label>
+
+                <div class="col-lg-7">
+                    <textarea class="form-control" ng-model="order.artSubject"></textarea>
+                </div>
+                <label class="small col-lg-4" ng-show="artSubject.hasError()">
+                    &nbsp;<span class="glyphicon glyphicon-remove-circle"></span>&nbsp;{{artSubject.msg}}
+                </label>
+            </div>
+        </form>
+    </div>
+    <div>
+        <div class="gzh-item" ng-repeat="item in order.items">
+            <div class="gzh-icon">
+                <img ng-src="./logos/{{item.logo}}">
+
+                <div class="gzh-type"><span class="badge">{{item.type}}</span></div>
+            </div>
+            <div class="gzh-info">
+                <div class="gzh-title"><span ng-attr-tooltip="微信ID：{{item.code}}">{{item.title}}</span></div>
+                <div class="gzh-fans">粉丝数：{{item.fans}}<span class="wan">万</span></div>
+                <div class="gzh-reads"><span tooltip="周 / 月">阅读量：{{item.rW}} / {{item.rM}}</span></div>
+            </div>
+            <div class="gzh-right">
+                <div class="gzh-price"><span>¥</span><span>{{item.price}}</span></div>
+                <div class="btn-gzh">
+                    <button class="btn btn-default btn-sm" ng-click="delItem(item)">删除</button>
+                </div>
+            </div>
+            <div class="gzh-date">
+                <span>投放自</span><span class="badge"
+                                      ng-click="selectDateStart(item)">{{d2s(item.dateStart)}}</span>至<span
+                    class="badge" ng-click="selectDateStart(item)">{{d2s(item.dateEnd)}}</span>
+            </div>
+        </div>
+    </div>
+    <div ng-bind="errorMsg" ng-show="errorMsg"></div>
+</div>
+<div class="copy-right">
+    Copyright © 2014-2015 德合睿创
+</div>
+
+</body>
+</html>

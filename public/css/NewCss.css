@@ -1,0 +1,123 @@
+/* CSS Document  */
+html,body,div,span,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,a,code,em,img,q,small,strong,dd,dl,dt,li,ol,ul,fieldset,form,label,table,tbody,tr,th,td,input {
+	margin:0;
+	padding:0
+}
+body {
+	background:#efefef;
+	color:#222;
+	font-size:14px;
+	font-family:"Helvetica Neue","Hiragino Sans GB","Segoe UI","Microsoft Yahei","微软雅黑",Tahoma,Arial,STHeiti,sans-serif;
+	_font-family:Tahoma,Arial,Helvetica,STHeiti,sans-serif;
+	cursor:default
+	height:100%;
+}
+html.hasFontSmoothing-false body {
+	font-family:Tahoma,Arial,Helvetica,STHeiti;
+	height:100%;
+}
+a img,:link img,:visited img {
+	border:0
+}
+table {
+	border-collapse:collapse
+}
+.clearboth {clear:both;font-size:0px;}
+li{ list-style-type:none;}
+
+/* firstBox */
+.firstBox { background:url(../images/deheruichuangBg.jpg) center 0 no-repeat;;height:777px; }
+.firstBox ul{ text-align:left; margin-left:100px; padding-top:80px;}
+.firstBox li.firstLogo {}
+.firstBox li.firstTuandui{ font-size:20px; color:#FFF; font-weight:700;}
+.firstBox li.firstZongshu{ font-size:14px; color:#FFF; margin-top:6px;}
+.firstBox li.firstDown{margin-top:50px;}
+.firstBox li.firstBottom{margin-top:310px; color:#FFF;}
+
+/* secondBox */
+.secondBox { background-color:#32a6ff; width:100%; height:550px; text-align:center; padding-top:90px;}
+.secondBox .secondContent { text-align:center; width:980px; margin:0 auto; }
+.secondBox .left{ float:left; display:inline;  margin-left:40px;}
+.secondBox .center { float:left; display:inline; margin-left:90px;}
+.secondBox .center li{list-style-type:none; }
+.secondBox .center .yuedu{ font-size:20px; color:#FFF;}
+.secondBox .center .jiangshi{ font-size:18px; color:#FFF; margin-bottom:20px;}
+.secondBox .center .littlePeople { margin-top:100px;}
+.secondBox .right{ float:left; display:inline; margin-left:90px;}
+
+/* thirdBox */
+.thirdBox { background-color:#f3f3f3; width:100%; height:595px; padding-bottom:0px;  vertical-align:bottom;}
+.thirdBox .thirdLeft{ float:left; margin-left:200px; margin-top:44px;}
+.thirdBox .thirdLeft img{ }
+.thirdBox .thirdCenter {float:left; margin-top:540px; margin-left:80px;}
+.thirdBox .thirdRight{ float:left; margin-left:70px; margin-top:60px;}
+.thirdBox .thirdRight li.thirdTuiguang{ font-size:25px; font-weight:500;}
+.thirdBox .thirdRight li.thirdQuanbu{font-size:15px; margin-bottom:20px; margin-top:8px;}
+.thirdBox .thirdRight li.thirdQuanbu span{color:#32a6ff;}
+
+/* forthBox */
+.forthBox { background-color:#32a6ff; width:100%; height:524px; padding:0px;}
+.forthBox .forthLeft {float:left; margin-left:170px; margin-top:70px; margin-bottom:0px;}
+.forthBox .forthLeft ul{padding:0px; }
+.forthBox .forthLeft .forthChuanbo{ font-size:25px; color:#FFF; font-weight:500;}
+.forthBox .forthLeft .forthYouxiu{ font-size:16px; color:#FFF;}
+.forthBox .forthLeft .forthYouxiu span{color:#062742;}
+.forthBox .forthLeft .forthImg { margin-top:65px; margin-left:15px;}
+.forthBox .forthRight {float:left; margin-left:100px; margin-top:80px; margin-bottom:0px;}
+
+/* fifthBox */
+.fifthBox { background-color:#ededed; width:100%; height:400px; padding-top:35px;}
+.fifthBox .fifthLeft{ float:left; margin-left:150px; margin-top:70px;}
+.fifthBox .fifthCenter{ float:left; margin-left:60px; margin-top:70px;}
+.fifthBox .fifthCenter ul{ width:200px;}
+.fifthBox .fifthCenter ul li{ color:#000000; font-size:16px; list-style-type:none; font-weight:600;}
+.fifthBox .fifthCenter .fifthDown { margin-top:50px;}
+.fifthBox .fifthLittleBiao{ float:left; margin-top:30px; margin-left:10px;}
+.fifthBox .fifthRight{ float:left; margin-left:50px;}
+.fifthBox .fifthRight p { font-size:20px; margin-left:20px;}
+.fifthBox .fifthRight ul { width:680px; margin-top:15px;}
+.fifthBox .fifthRight ul li{ float:left; list-style-type:none; margin-left:20px; height:80px; height:100px;}
+
+/* footer */
+.footer { background-color:#dfdfdf; width:100%;height:105px;text-align:center;padding-top:30px;}
+.footer ul{width:750px; margin:0 auto; }
+.footer ul li{ list-style-type:none; float:left;font-size:18px;color:#464646;margin-left:65px;}
+.footer a {color:#464646;text-decoration:none;}
+.footer a:hover {color:#F00;}
+.footer p{margin:0 auto;color:#a5a5a1;padding-top:15px;}
+
+
+@media (min-width: 768px) {
+}
+
+
+.firstEnquiry {
+	display: inline-block;
+	font-size: 250%;
+	background-color: red;
+	color: white;
+	padding: 5px 30px;
+	margin: 20px 30px;
+	border: 1px solid transparent;
+}
+
+.firstEnquiry:hover{
+	text-decoration: none;
+	color: white;
+}
+
+.fifthEnquiry {
+	display: inline-block;
+	font-size: 150%;
+	background-color: red;
+	color: white;
+	padding: 5px 20px;
+	margin: 20px 15px;
+	border: 1px solid transparent;
+}
+
+.fifthEnquiry:hover {
+	text-decoration: none;
+	color: white;
+	border-color: #ffffff;
+}

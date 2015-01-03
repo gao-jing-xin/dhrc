@@ -1,0 +1,363 @@
+body {
+    color: #222;
+    font-size: 14px;
+    font-family: "Helvetica Neue", "Hiragino Sans GB", "Segoe UI", "Microsoft Yahei", "微软雅黑", Tahoma, Arial, STHeiti, sans-serif;
+}
+
+.my-dlg-header {
+    padding: 5px 10px 5px 10px;
+    background: rgba(0, 0, 0, .1);
+    border-top-right-radius: 5px;
+    border-top-left-radius: 5px;
+}
+
+.my-user-label {
+    font-size: 0.8em;
+    color: #dcdcdc;
+}
+
+.my-user-label.active {
+    color: darkgreen;
+}
+.my-user-label .glyphicon {
+    margin-right: 4px;
+}
+
+.step {
+    float: left;
+}
+
+.step span {
+    display: block;
+    float: left;
+    font-size: 1.4em;
+    font-weight: bold;
+    line-height: 40px;
+}
+
+.step + .step {
+    margin-left: -18px;
+}
+
+.step .arrow {
+    border-style: solid;
+    border-width: 20px 0 20px 20px;
+    border-color: transparent transparent transparent #bbdefb;
+}
+
+.step .arrow-start {
+    border-style: solid;
+    border-width: 20px 0 20px 20px;
+    border-color: #bbdefb #bbdefb #bbdefb transparent;
+}
+
+.step .text {
+    padding: 0 10px;
+    color: #1565C0;
+    background: #bbdefb;
+}
+
+.step.selected .text {
+    color: #fff;
+    background: #2196F3;
+}
+
+.step.selected .arrow {
+    border-color: transparent transparent transparent #2196F3;
+}
+
+.step.selected .arrow-start {
+    border-color: #2196F3 #2196F3 #2196F3 transparent;
+}
+
+.clear {
+    clear: both;
+}
+
+.my-del-line {
+    text-decoration: line-through;
+}
+
+.my-error-label {
+    display: none;
+    color: red;
+}
+
+.has-error .my-error-label {
+    display: inline;
+}
+
+.gzh-item {
+    float: left;
+    margin: 8px;
+    padding: 8px;
+    border: 1px solid #f3f3f3;
+}
+
+.gzh-item.selected {
+    border-color: #95deee;
+}
+
+.gzh-icon {
+    float: left;
+    width: 80px;
+    height: 80px;
+    position: relative;
+    text-align: center;
+}
+
+.gzh-icon img {
+    width: 100%;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.gzh-type {
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    color: grey;
+}
+
+.gzh-info {
+    float: left;
+    width: 170px;
+    margin-left: 8px;
+}
+
+.gzh-title {
+    color: #176ed0;
+    margin-top: 2px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 1.3em;
+}
+
+.gzh-right {
+    text-align: right;
+    float: left;
+    width: 86px;
+}
+
+.gzh-price {
+    line-height: 30px;
+}
+
+.total-price, .gzh-price {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #d44950;
+}
+
+.shopping-cart .badge {
+    background-color: #d44950;
+}
+
+.gzh-price *, .total-price * {
+    margin-right: 4px;
+}
+
+.steps {
+    margin-left: 12px;
+}
+
+.gzh-fans {
+    margin-top: 4px;
+}
+
+.gzh-fans .wan {
+    font-size: 1.2em;
+    margin-left: 4px;
+}
+
+.gzh-reads {
+    margin-top: 4px;
+}
+
+.btn-gzh {
+    margin-top: 16px;
+}
+
+.gzh-code {
+    margin-top: 4px;
+    color: grey;
+    font-size: .7em;
+}
+
+.btn:focus {
+    outline: 0;
+}
+
+header {
+    height: 70px;
+    background-color: #e3e3e3;
+}
+
+header .container {
+    height: 100%;
+}
+
+img.logo {
+    margin: 5px;
+    height: 60px;
+    float: left;
+}
+
+.menu {
+    margin-top: 26px;
+    text-align: center;
+}
+
+.menu li {
+    list-style-type: none;
+    float: left;
+    font-size: 1.3em;
+    color: #464646;
+    margin-left: 65px;
+}
+
+.menu li.selected {
+    color: #0086B3;
+}
+
+.menu a {
+    color: #464646;
+    text-decoration: none;
+}
+
+.menu a:hover {
+    color: #2687ba;
+}
+
+.head-bar {
+    width: 100%;
+    height: 61px;
+}
+
+.head-bar-content {
+    padding: 8px;
+    top: 0;
+}
+
+.head-bar-content .pagination-sm {
+    display: inline-block;
+    margin: 5px 4px 0px 0px;
+    float: right;
+}
+
+.affix, .affix-top, .affix-bottom {
+    background-color: #fff;
+    width: 100%;
+    top: 0;
+    border-bottom: 1px solid #ededed;
+    z-index: 1000;
+}
+
+.shopping-cart {
+    font-size: 1.1em;
+    float: right;
+    margin-right: 8px;
+    margin-left: 16px;
+
+}
+
+.shopping-cart * {
+    vertical-align: middle;
+}
+
+.shopping-cart a {
+    margin-left: 8px;
+}
+
+.copy-right {
+    color: #a5a5a1;
+    padding: 10px 0;
+    text-align: center;
+    margin-top: 30px;
+    margin-bottom: 50px;
+}
+
+.bodyBox {
+    margin-top: 100px;
+    margin-bottom: 30px;
+}
+
+.drop-shadow {
+    -webkit-box-shadow: 0 0 3px 2px rgba(0, 0, 0, .5);
+    box-shadow: 0 0 3px 2px rgba(0, 0, 0, .5);
+}
+
+.about-panel {
+    margin: 0 auto;
+    width: 530px;
+    background-color: white;
+}
+
+.xj-head {
+    margin-top: 15px;
+}
+
+.xj-head textarea {
+    height: 150px;
+}
+
+.xj-step2 .gzh-icon {
+    width: 60px;
+    height: 60px;
+}
+
+.xj-step2 .gzh-info {
+    width: 200px;
+}
+
+.xj-step2 .gzh-right {
+    float: right
+}
+
+.xj-step2 .gzh-item {
+    float: none;
+}
+
+.xj-step2 .gzh-title {
+    margin-top: 0;
+    font-size: 1em;
+}
+
+.xj-step2 .gzh-fans, .xj-step2 .gzh-reads {
+    font-size: 0.8em;
+}
+
+.xj-step2 .gzh-price {
+    font-size: 1.1em;
+}
+
+.xj-step2 .btn-gzh {
+    margin-top: 4px;
+}
+
+.xj-step3 .head-bar {
+    margin-top: 30px;
+    margin-bottom: 20px;
+}
+
+.xj-step3 .info-msg {
+    margin-left: 17px;
+}
+
+.gzh-date {
+    margin: 20px;
+}
+
+.gzh-date .badge {
+    cursor: pointer;
+    color: #fff;
+    background-color: #337ab7;
+    margin: 0 10px;
+    padding: 5px 15px;
+}
+
+.gzh-date .badge:hover {
+    background-color: #286090;
+}
+
+≈

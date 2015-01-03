@@ -1,0 +1,58 @@
+<div class="modal-header my-dlg-header">
+    <label style="margin-bottom:0px">用户信息</label>
+    <button type="button" class="close" ng-click="$dismiss()">&times;</button>
+</div>
+<div class="modal-body">
+    <label>用户: {{userName}}</label>
+    <br>
+
+    <form role="form" ng-disabled="serverCalling">
+        <div class="panel panel-default">
+            <div class="panel-heading btn-link" ng-click="userInfoClick()">
+                基本信息<i class="glyphicon pull-right"
+                       ng-class=" ifEditing('info','glyphicon-remove','glyphicon-edit')"></i>
+            </div>
+            <div class="panel-collapse" collapse="editing==='info'">
+                <div class="panel-body">
+                    <label>公司: {{company.value}}</label><br>
+                    <label>性别: {{sex.value}}</label><br>
+                    <label>电话: {{phoneNo.value}}</label><br>
+                    <label>Q Q: {{qq.value}}</label>
+                </div>
+            </div>
+            <div class="panel-collapse" collapse="editing!=='info'">
+                <div class="panel-body">
+                    <div my-input="company" my-icon-class="glyphicon-briefcase">公司</div>
+                    <div my-input="phoneNo" my-icon-class="glyphicon-earphone">电话</div>
+                    <div my-input="qq" my-icon-class="glyphicon-heart-empty">QQ(号码或注册邮箱)</div>
+                    <div class="form-group">
+                        <label>性别</label>
+                        <label class="radio-inline">
+                            <input type="radio" ng-model="sex.value" value="男"> 男 <br/>
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" ng-model="sex.value" value="女"> 女 <br/>
+                        </label>
+
+                        <div my-ok-cancel-btn on-ok="changeInfo()" on-cancel="edit()"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading btn-link" ng-click="changePWClick()">
+                修改密码<i class="glyphicon pull-right"
+                       ng-class=" ifEditing('pw','glyphicon-remove','glyphicon-edit')"></i>
+            </div>
+            <div class="panel-collapse" collapse="editing!=='pw'">
+                <div class="panel-body">
+                    <div my-input="oldPW" my-icon-class="glyphicon-asterisk" my-input-type="password">原密码</div>
+                    <div my-input="password" my-icon-class="glyphicon-asterisk" my-input-type="password">新密码</div>
+                    <div my-input="password2" my-icon-class="glyphicon-asterisk" my-input-type="password">密码确认</div>
+                    <div my-ok-cancel-btn on-ok="changePW()" on-cancel="edit()"></div>
+                </div>
+            </div>
+        </div>
+        <button class="btn btn-block btn-danger" ng-click="logout()">退 出 登 录</button>
+    </form>
+</div>

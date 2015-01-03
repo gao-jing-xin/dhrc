@@ -1,0 +1,16 @@
+<div class="modal-header my-dlg-header">
+    <label>用户登录</label>
+    <button type="button" class="close" ng-click="$dismiss()">&times;</button>
+</div>
+<div class="modal-body">
+    <form role="form" ng-disabled="serverCalling">
+        <div my-input="userName" my-icon-class="glyphicon-user">用户名(电子邮箱)</div>
+        <div my-input="password" my-icon-class="glyphicon-asterisk" my-input-type="password">用户密码</div>
+        <div my-check-box="autoLogin">自动登录</div>
+        <div class="pull-right">
+            <a href="/reset-pw.html">忘记密码</a>&nbsp;&nbsp;
+            <a href="/sign-in.html">注册</a>
+        </div>
+        <button class="btn btn-block btn-primary" ng-click="login()">登 录</button>
+    </form>
+</div>
