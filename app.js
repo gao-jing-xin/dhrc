@@ -396,7 +396,7 @@ function importGZH(files, index, callback) {
                 });
             });
         } else {
-            importer.parseDays(r);
+            importer.parseDays(record);
             callback();
         }
     };
