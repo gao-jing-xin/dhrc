@@ -17,7 +17,7 @@
     <script>
         (function () {
             var m = angular.module("myUserResetPW", ["myBase", "myUser"]);
-            m.controller("ResetPasswordController", ["$scope", "user", "userInput", "serverCall", "Input", function ($scope, user, userInput, serverCall, Input) {
+            m.controller("ResetPasswordController", ["$scope", "userInput", "serverCall", "Input", function ($scope, userInput, serverCall, Input) {
                 $scope.step = 1;
                 userInput.newUserName($scope);
                 $scope.resetPW = function () {
@@ -58,7 +58,7 @@
     <form class="col-lg-offset-2 col-lg-6" ng-disabled="serverCalling">
         <h2>找回密码</h2>
 
-        <div>
+        <div style="margin: 10px 0;">
             <div class="step" ng-class="{'selected':step===1}">
                 <span class="text">1. 确认账号</span>
                 <span class="arrow"></span>
@@ -79,10 +79,7 @@
             <div my-input="userName" my-icon-class="glyphicon-user">用户名(电子邮箱)</div>
             <button class="btn btn-primary" ng-click="resetPW()">下一步</button>
         </div>
-        <label ng-show="step===2">
-            重置密码邮件已向{{userName.value}}发出，请在一个小时以内进行密码重置操作！
-            <a href="/index.html">跳转到首页</a>
-        </label>
+        <h3 class="resultH" ng-show="step===2">重置密码邮件已向{{userName.value}}发出，请在一个小时以内进行密码重置操作！</h3>
 
     </form>
 </div>

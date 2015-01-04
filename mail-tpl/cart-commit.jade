@@ -1,0 +1,50 @@
+html
+    head
+        style.
+            body {
+                color: #888;
+                font-size: 20px;
+            }
+
+            dt{
+                font-weight: bold;
+                color: #176ed0;
+            }
+
+            dd {
+                margin-left: 15px;
+            }
+            td {
+                border: 1px #ccc dotted;
+                font-size: 0.8em;
+            }
+            thead td{
+                font-weight: bold;
+                font-size: 1em;
+            }
+
+    body
+        p 尊敬的<b>#{userName}</b>您好：
+        p 您已向德合睿创提交了询价申请，故系统自动将您的询价信息发送至您的邮箱备查。我们会尽快确定好报价联系您。以下是您提交的相关询价信息。
+        dl
+            dt 标题
+            dd #{artTitle}
+            dt 摘要
+            dd #{artSubject ? artSubject : '无'}
+            dt 明细
+            dd
+                table(cellpadding="5px" cellspacing="0")
+                    thead
+                        td(width='250px') 公众号
+                        td(width='100px') 微信ID
+                        td(width='80px') 参考价格
+                        td(width='150px') 投放时间
+                        td(width='150px') 结束时间
+                    each item in items
+                        tr
+                            td #{item.title}
+                            td #{item.code}
+                            td ¥#{item.price}
+                            td #{ftd(item.dateStart)}
+                            td #{ftd(item.dateEnd)}
+

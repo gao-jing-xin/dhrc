@@ -18,29 +18,16 @@
     <script>
         (function () {
             var m = angular.module("myGZHUpload", ["myBase", "myUser"]);
-            m.controller("UploadController", ["$scope", "user", "userInput", "serverCall", "$modal", "$window", function ($scope, user, userInput, serverCall, $modal, $window) {
+            m.controller("UploadController", ["$scope", "userInput", "serverCall", "$window", function ($scope, userInput, serverCall, $window) {
                 $scope.upload = {
                     file: '',
                     msg: ''
                 };
-
                 $window.$$gzhUploaded = function (msg) {
                     $scope.upload.msg = msg;
                     $scope.upload.file = '';
                     $scope.$apply();
                 };
-                m.directive("gzhInput", function () {
-                    return {
-                        restrict: "AE",
-                        transclude: true,
-                        replace: true,
-                        scope: {
-                            gzhInput: "=",
-                            type: "@"
-                        },
-                        templateUrl: 'template/enquiry/gzhInput.html'
-                    };
-                });
             }]);
         })();
     </script>

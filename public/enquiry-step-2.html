@@ -27,15 +27,25 @@
             }
 
             var m = angular.module("myEnquiry", ["myBase", "myUser", "ui.bootstrap.datepicker"]);
-            m.controller("EnquiryController", ["$scope", "user", "Input", "serverCall", "$modal", "$window", function ($scope, user, Input, serverCall, $modal, $window) {
+            m.controller("EnquiryController", ["$scope", "Input", "serverCall", "$modal", "$window", function ($scope, Input, serverCall, $modal, $window) {
                 $scope.d2s = function (d) {
-                    return d.getFullYear() + ' 年 ' + (d.getMonth() + 1) + ' 月 ' + d.getDay() + ' 日';
+                    return d.getFullYear() + ' 年 ' + (d.getMonth() + 1) + ' 月 ' + d.getDate() + ' 日';
                 };
-                $scope.selectDateStart = function (item) {
-
-                };
-                $scope.selectDateEnd = function (item) {
-
+                $scope.selectDate = function (item) {
+                    $modal.open({
+                        templateUrl: 'tpl/select-date.html',
+                        controller: ["$scope", "item", function ($scope, item) {
+                            $scope.item = item;
+                            $scope.minDate = new Date();
+                        }],
+                        size: "lg",
+                        scope: $scope,
+                        resolve: {
+                            item: function () {
+                                return item;
+                            }
+                        }
+                    });
                 };
                 function resetOrder(o) {
 
@@ -70,9 +80,8 @@
                     }
                 }
 
-                resetOrder();
-                $scope.artTitle = Input.newRequiredS();
-                $scope.artSubject = Input.newInput();
+                $scope.artTitle = Input.newRequiredS(undefined, "标题");
+                $scope.artSubject = Input.newRequiredS(undefined, "摘要");
                 $scope.delItem = function (item) {
                     var order = $scope.order;
                     serverCall('cartGZHRemove', {
@@ -110,12 +119,28 @@
                     });
                 };
                 $scope.commit = function () {
+                    if (Input.hasError($scope.artSubject, $scope.artTitle)) {
+                        return;
+                    }
                     var order = $scope.order;
+                    var upItems = [];
+                    angular.forEach(order.items, function (oi) {
+                        upItems.push({
+                            id: oi.id,
+                            dateStart: oi.dateStart,
+                            dateEnd: oi.dateEnd
+                        });
+                    });
+                    if (upItems.length === 0) {
+                        this.errorMsg = '没有选择公众号';
+                        return;
+                    }
                     serverCall("cartCommit", {
                         orderID: order.id,
                         orderVersion: order.version,
                         artTitle: $scope.artTitle.value,
-                        artSubject: $scope.artSubject.value
+                        artSubject: $scope.artSubject.value,
+                        items: upItems
                     }, function (result) {
                         if (result.success) {
                             $window.location.href = 'enquiry-end.html';
@@ -130,18 +155,44 @@
                     item._dpOpened = true;
                 };
                 $scope.$on("userStateChanged", function () {
-                    if (user.hasLogin()) {
+                    if ($scope.user.hasLogin()) {
                         $scope.queryCart();
+                    } else {
+                        resetOrder();
                     }
                 });
-                user.tryAutoLogin(function () {
-                    $scope.$broadcast("userStateChanged");
+                resetOrder();
+                $scope.user.tryAutoLogin(function (user) {
+                    if (!user.hasLogin()) {
+                        user.showLoginDlg();
+                    }
                 });
             }]);
         })();
     </script>
+    <script type="text/ng-template" id="tpl/select-date.html">
+        <div class="modal-header">
+            请选择投放时间：<span ng-attr-tooltip="微信ID：{{item.code}}">{{item.title}}</span>
+        </div>
+        <div class="modal-body">
+            <div style="float:left;margin: 10px 30px">
+                投放开始时间
+                <div datepicker ng-model="item.dateStart" min-date="minDate" max-date="item.dateEnd" show-weeks="true"
+                     class="well well-sm"></div>
+            </div>
+            <div style="float:left;margin:10px 30px">
+                投放结束时间
+                <div datepicker ng-model="item.dateEnd" min-date="item.dateStart" show-weeks="true"
+                     class="well well-sm"></div>
+            </div>
+            <div style="float:left;padding:260px 0 20px 0">
+                <button class="btn btn-primary" ng-click="$close()">确 定</button>
+            </div>
+            <div class="clear"></div>
+        </div>
+    </script>
 </head>
-<body bindonce ng-controller="EnquiryController">
+<body bindonce ng-controller="UserStateController">
 <header>
     <div class="container">
         <img class="logo" src="./images/logo.png" alt="德合睿创" title="德合睿创">
@@ -156,96 +207,101 @@
         </ul>
     </div>
 </header>
-<div class="head-bar">
-    <div data-spy="affix" data-offset-top="70">
-        <div class="container">
-            <div class="head-bar-content">
-                <div class="steps">
-                    <div class="step">
-                        <span class="text">1. 选择公众号</span>
-                        <span class="arrow"></span>
+<div ng-controller="EnquiryController">
+    <div class="head-bar">
+        <div data-spy="affix" data-offset-top="70">
+            <div class="container">
+                <div class="head-bar-content">
+                    <div class="steps">
+                        <div class="step">
+                            <span class="text">1. 选择公众号</span>
+                            <span class="arrow"></span>
+                        </div>
+                        <div class="step selected">
+                            <span class="arrow-start"></span>
+                            <span class="text">2. 完善信息</span>
+                            <span class="arrow"></span>
+                        </div>
+                        <div class="step">
+                            <span class="arrow-start"></span>
+                            <span class="text">3. 提交询价</span>
+                        </div>
                     </div>
-                    <div class="step selected">
-                        <span class="arrow-start"></span>
-                        <span class="text">2. 完善信息</span>
-                        <span class="arrow"></span>
-                    </div>
-                    <div class="step">
-                        <span class="arrow-start"></span>
-                        <span class="text">3. 提交询价</span>
-                    </div>
-                </div>
 
-                <div class="shopping-cart">
+                    <div class="shopping-cart">
 
-                    <div my-user-label></div>
-                    <i class="glyphicon glyphicon-shopping-cart"></i>
-                    <span class="badge" ng-bind="order.items.length"></span>
-                    <span class="total-price"><span>¥</span><span ng-bind="order.totalPrice"></span></span>
-                    <a class="btn btn-default" href="enquiry.html">上一步</a>
-                    <a class="btn btn-primary" ng-click="commit()">提交询价请求</a>
+                        <div my-user-label></div>
+                        <i class="glyphicon glyphicon-shopping-cart"></i>
+                        <span class="badge" ng-bind="order.items.length"></span>
+                        <span class="total-price"><span>≈¥</span><span ng-bind="order.totalPrice"></span></span>
+                        <a class="btn btn-default" href="enquiry.html">上一步</a>
+                        <a class="btn btn-primary" ng-click="commit()">提交询价请求</a>
+                    </div>
+                    <div class="clear"></div>
                 </div>
-                <div class="clear"></div>
             </div>
         </div>
     </div>
-</div>
-<div class="container xj-step2">
-    <div class="row xj-head">
-        <form class="form-horizontal">
-            <div class="form-group">
-                <label class="control-label col-lg-1">标题</label>
+    <div class="container" ng-show="errorMsg">
+        <label class="label label-danger pull-right" style="margin-right:16px" ng-bind="errorMsg"></label>
 
-                <div class="col-lg-7">
-                    <input type="text" class="form-control" ng-model="artTitle.value"
-                           ng-change="artTitle.onChanged()">
-                </div>
-                <label class="small col-lg-4" ng-show="artTitle.hasError()">
-                    &nbsp;<span class="glyphicon glyphicon-remove-circle"></span>&nbsp;{{artTitle.msg}}
-                </label>
-            </div>
-            <div class="form-group">
-                <label class="control-label col-lg-1">摘要</label>
-
-                <div class="col-lg-7">
-                    <textarea class="form-control" ng-model="order.artSubject"></textarea>
-                </div>
-                <label class="small col-lg-4" ng-show="artSubject.hasError()">
-                    &nbsp;<span class="glyphicon glyphicon-remove-circle"></span>&nbsp;{{artSubject.msg}}
-                </label>
-            </div>
-        </form>
+        <div class="clear"></div>
     </div>
-    <div>
-        <div class="gzh-item" ng-repeat="item in order.items">
-            <div class="gzh-icon">
-                <img ng-src="./logos/{{item.logo}}">
+    <div class="container xj-step2">
+        <div class="row xj-head">
+            <form class="form-horizontal">
+                <div class="form-group" ng-class="{'has-error':artTitle.hasError()}">
+                    <label class="control-label col-lg-1">标题</label>
 
-                <div class="gzh-type"><span class="badge">{{item.type}}</span></div>
-            </div>
-            <div class="gzh-info">
-                <div class="gzh-title"><span ng-attr-tooltip="微信ID：{{item.code}}">{{item.title}}</span></div>
-                <div class="gzh-fans">粉丝数：{{item.fans}}<span class="wan">万</span></div>
-                <div class="gzh-reads"><span tooltip="周 / 月">阅读量：{{item.rW}} / {{item.rM}}</span></div>
-            </div>
-            <div class="gzh-right">
-                <div class="gzh-price"><span>¥</span><span>{{item.price}}</span></div>
-                <div class="btn-gzh">
-                    <button class="btn btn-default btn-sm" ng-click="delItem(item)">删除</button>
+                    <div class="col-lg-7">
+                        <input type="text" class="form-control" ng-model="artTitle.value"
+                               ng-change="artTitle.onChanged()">
+                    </div>
+                    <label class="control-label small col-lg-4" style="text-align: left" ng-show="artTitle.hasError()">
+                        &nbsp;<span class="glyphicon glyphicon-remove-circle"></span>&nbsp;{{artTitle.msg}}
+                    </label>
                 </div>
-            </div>
-            <div class="gzh-date">
-                <span>投放自</span><span class="badge"
-                                      ng-click="selectDateStart(item)">{{d2s(item.dateStart)}}</span>至<span
-                    class="badge" ng-click="selectDateStart(item)">{{d2s(item.dateEnd)}}</span>
+                <div class="form-group" ng-class="{'has-error':artSubject.hasError()}">
+                    <label class="control-label col-lg-1">摘要</label>
+
+                    <div class="col-lg-7">
+                        <textarea class="form-control" ng-model="order.artSubject"></textarea>
+                    </div>
+                    <label class="control-label small col-lg-4" style="text-align: left"
+                           ng-show="artSubject.hasError()">
+                        &nbsp;<span class="glyphicon glyphicon-remove-circle"></span>&nbsp;{{artSubject.msg}}
+                    </label>
+                </div>
+            </form>
+        </div>
+        <div>
+            <div class="gzh-item" ng-repeat="item in order.items">
+                <div class="gzh-icon">
+                    <img ng-src="./logos/{{item.logo}}">
+
+                    <div class="gzh-type"><span class="badge">{{item.type}}</span></div>
+                </div>
+                <div class="gzh-info">
+                    <div class="gzh-title"><span ng-attr-tooltip="微信ID：{{item.code}}">{{item.title}}</span></div>
+                    <div class="gzh-fans">粉丝数：{{item.fans}}<span class="wan">万</span></div>
+                    <div class="gzh-reads"><span tooltip="周 / 月">阅读量：{{item.rW}} / {{item.rM}}</span></div>
+                </div>
+                <div class="gzh-right">
+                    <div class="gzh-price"><span>≈¥</span><span>{{item.price}}</span></div>
+                    <div class="btn-gzh">
+                        <button class="btn btn-default btn-sm" ng-click="delItem(item)">删除</button>
+                    </div>
+                </div>
+                <div class="gzh-date">
+                    <span>投放自</span><span class="badge" ng-click="selectDate(item)">{{d2s(item.dateStart)}}</span>至<span
+                        class="badge" ng-click="selectDate(item)">{{d2s(item.dateEnd)}}</span>
+                </div>
             </div>
         </div>
     </div>
-    <div ng-bind="errorMsg" ng-show="errorMsg"></div>
+    <div class="copy-right">
+        Copyright © 2014-2015 德合睿创
+    </div>
 </div>
-<div class="copy-right">
-    Copyright © 2014-2015 德合睿创
-</div>
-
 </body>
 </html>

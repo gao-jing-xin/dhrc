@@ -18,7 +18,7 @@
     <script>
         (function () {
             var m = angular.module("myUserSignIn", ["myBase", "myUser"]);
-            m.controller("SignInController", ["$scope", "user", "userInput", "serverCall", "Input", function ($scope, user, userInput, serverCall, Input) {
+            m.controller("SignInController", ["$scope", "userInput", "serverCall", "Input", function ($scope, userInput, serverCall, Input) {
                 userInput.newUserName($scope);
                 userInput.newPassword($scope);
                 userInput.newPassword2($scope);
@@ -72,6 +72,7 @@
 <div class="row" ng-controller="SignInController">
     <form class="col-lg-offset-4 col-lg-4 col-md-offset-3 col-md-6">
         <h3>用户注册</h3>
+
         <div style="margin-bottom: 20px">
             <div class="step" ng-class="{'selected':step===1}">
                 <span class="text">1. 填写信息</span>
@@ -106,10 +107,7 @@
             <div my-input="qq" my-icon-class="glyphicon-heart-empty">QQ(号码或注册邮箱)</div>
             <button class="btn btn-block btn-primary" ng-click="signIn()">注 册</button>
         </div>
-        <div ng-show="step==2">
-            <div class="alert alert-success" role="alert">注册激活邮件已发出，一小时内有效，请激活注册！</div>
-            <a href="/index.html">跳转到首页</a>
-        </div>
+        <h3 class="resultH" ng-show="step==2">注册激活邮件已发出，一小时内有效，请激活注册！</h3>
     </form>
 </div>
 <div class="copy-right">

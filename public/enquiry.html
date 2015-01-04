@@ -21,11 +21,9 @@
     <script>
         (function () {
             var m = angular.module("myEnquiry", ["myBase", "myUser"]);
-            m.controller("EnquiryController", ["$scope", "user", "userInput", "serverCall", "$modal", "$window", function ($scope, user, userInput, serverCall, $modal, $window) {
+            m.controller("EnquiryController", ["$scope", "userInput", "serverCall", "$modal", "$window", function ($scope, userInput, serverCall, $modal, $window) {
 
-                var orderID = undefined;
-                var orderVersion = undefined;
-                var cartItems = {};
+                var orderID, orderVersion, cartItems;
 
                 function setCartItems(cItems) {
                     cartItems = cItems;
@@ -35,9 +33,21 @@
                     delete cItems.count;
                 }
 
-                $scope.totalPrice = 0;
-                $scope.cartItemCount = 0;
+                function reset() {
+                    $scope.totalPrice = 0;
+                    $scope.cartItemCount = 0;
+                    $scope.gzhs = [];
+                    $scope.currentPage = 1;
+                    $scope.totalCount = 0;
+                    $scope.errorMsg = undefined;
+                    cartItems = {};
+                    orderID = undefined;
+                    orderVersion = undefined;
+                }
+
                 $scope.selectGZH = function (item) {
+                    $scope.errorMsg = undefined;
+
                     var selectedID = item.isSelected ? -item.id : item.id;
 
                     serverCall('cartGZHSelect', {
@@ -69,10 +79,8 @@
                     return item.isSelected ? '取消选择' : '选择';
                 };
                 var COUNT_PER_PAGE = $scope.COUNT_PER_PAGE = 30;
-                $scope.gzhs = [];
-                $scope.currentPage = 1;
-                $scope.totalCount = 0;
                 $scope.queryGZH = function () {
+                    $scope.errorMsg = undefined;
                     var qid = ++$scope.queryGZH.queryId;
                     serverCall("gzhQuery", {
                         orderID: orderID,
@@ -110,18 +118,30 @@
                 };
                 $scope.queryGZH.queryId = 0;
                 $scope.$on("userStateChanged", function () {
-                    if (user.hasLogin()) {
+                    if ($scope.user.hasLogin()) {
                         $scope.queryGZH();
+                    } else {
+                        reset();
                     }
                 });
-                user.tryAutoLogin(function () {
-                    $scope.$broadcast("userStateChanged");
+                reset();
+                $scope.user.tryAutoLogin(function (user) {
+                    if (!user.hasLogin()) {
+                        user.showLoginDlg();
+                    }
                 });
+                $scope.nextStep = function () {
+                    if (this.cartItemCount === 0) {
+                        this.errorMsg = '未选择任何公众号！';
+                        return;
+                    }
+                    $scope.goUrl('enquiry-step-2.html');
+                };
             }]);
         })();
     </script>
 </head>
-<body bindonce ng-controller="EnquiryController">
+<body bindonce ng-controller="UserStateController">
 <header>
     <div class="container">
         <img class="logo" src="./images/logo.png" alt="德合睿创" title="德合睿创">
@@ -136,70 +156,76 @@
         </ul>
     </div>
 </header>
-<div class="head-bar">
-    <div data-spy="affix" data-offset-top="70">
-        <div class="container">
-            <div class="head-bar-content">
-                <div class="steps">
-                    <div class="step selected">
-                        <span class="text">1. 选择公众号</span>
-                        <span class="arrow"></span>
+<div ng-controller="EnquiryController">
+    <div class="head-bar">
+        <div data-spy="affix" data-offset-top="70">
+            <div class="container">
+                <div class="head-bar-content">
+                    <div class="steps">
+                        <div class="step selected">
+                            <span class="text">1. 选择公众号</span>
+                            <span class="arrow"></span>
+                        </div>
+                        <div class="step">
+                            <span class="arrow-start"></span>
+                            <span class="text">2. 完善信息</span>
+                            <span class="arrow"></span>
+                        </div>
+                        <div class="step">
+                            <span class="arrow-start"></span>
+                            <span class="text">3. 提交询价</span>
+                        </div>
                     </div>
-                    <div class="step">
-                        <span class="arrow-start"></span>
-                        <span class="text">2. 完善信息</span>
-                        <span class="arrow"></span>
+
+                    <div class="shopping-cart">
+                        <div my-user-label></div>
+                        <i class="glyphicon glyphicon-shopping-cart"></i>
+                        <span class="badge" ng-bind="cartItemCount"></span>
+                        <span class="total-price"><span>≈¥</span><span ng-bind="totalPrice"></span></span>
+                        <a class="btn btn-primary" href="#" ng-click="nextStep()">下一步</a>
                     </div>
-                    <div class="step">
-                        <span class="arrow-start"></span>
-                        <span class="text">3. 提交询价</span>
-                    </div>
-                </div>
-
-                <div class="shopping-cart">
-                    <div my-user-label></div>
-                    <i class="glyphicon glyphicon-shopping-cart"></i>
-                    <span class="badge" ng-bind="cartItemCount"></span>
-                    <span class="total-price"><span>¥</span><span ng-bind="totalPrice"></span></span>
-                    <a class="btn btn-primary" href="enquiry-step-2.html">下一步</a>
-                </div>
-                <div pagination total-items="totalCount" ng-model="currentPage" ng-change="queryGZH()" max-size="5"
-                     class="pagination-sm" boundary-links="true"
-                     previous-text="&lsaquo;" next-text="&rsaquo;" items-per-page="COUNT_PER_PAGE" first-text="&laquo;"
-                     last-text="&raquo;"></div>
-                <div class="clear"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="container body">
-    <div>
-        <div class="gzh-item" ng-class="{'selected':item.isSelected}" ng-repeat="item in gzhs">
-            <div class="gzh-icon">
-                <img ng-src="./logos/{{item.logo}}">
-
-                <div class="gzh-type"><span class="badge">{{item.type}}</span></div>
-            </div>
-            <div class="gzh-info">
-                <div class="gzh-title"><span ng-attr-tooltip="微信ID：{{item.code}}">{{item.title}}</span></div>
-                <div class="gzh-fans">粉丝数：{{item.fans}}<span class="wan">万</span></div>
-                <div class="gzh-reads"><span tooltip="周 / 月">阅读量：{{item.rW}} / {{item.rM}}</span></div>
-            </div>
-            <div class="gzh-right">
-                <div class="gzh-price"><span>¥</span><span>{{item.price}}</span></div>
-                <div class="btn-gzh">
-                    <button class="btn btn-default btn-sm" ng-click="selectGZH(item)">{{selectBtnTitle(item)}}
-                    </button>
+                    <div pagination total-items="totalCount" ng-model="currentPage" ng-change="queryGZH()" max-size="5"
+                         class="pagination-sm" boundary-links="true"
+                         previous-text="&lsaquo;" next-text="&rsaquo;" items-per-page="COUNT_PER_PAGE"
+                         first-text="&laquo;"
+                         last-text="&raquo;"></div>
+                    <div class="clear"></div>
                 </div>
             </div>
         </div>
     </div>
-    <div ng-bind="errorMsg" ng-show="errorMsg"></div>
-</div>
-<div class="copy-right">
-    Copyright © 2014-2015 德合睿创
-</div>
+    <div class="container" ng-show="errorMsg">
+        <label class="label label-danger pull-right" style="margin-right:16px" ng-bind="errorMsg"></label>
 
+        <div class="clear"></div>
+    </div>
+
+    <div class="container body">
+        <div>
+            <div class="gzh-item" ng-class="{'selected':item.isSelected}" ng-repeat="item in gzhs">
+                <div class="gzh-icon">
+                    <img ng-src="./logos/{{item.logo}}">
+
+                    <div class="gzh-type"><span class="badge">{{item.type}}</span></div>
+                </div>
+                <div class="gzh-info">
+                    <div class="gzh-title"><span ng-attr-tooltip="微信ID：{{item.code}}">{{item.title}}</span></div>
+                    <div class="gzh-fans">粉丝数：{{item.fans}}<span class="wan">万</span></div>
+                    <div class="gzh-reads"><span tooltip="周 / 月">阅读量：{{item.rW}} / {{item.rM}}</span></div>
+                </div>
+                <div class="gzh-right">
+                    <div class="gzh-price"><span>≈¥</span><span>{{item.price}}</span></div>
+                    <div class="btn-gzh">
+                        <button class="btn btn-default btn-sm" ng-click="selectGZH(item)">{{selectBtnTitle(item)}}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="copy-right">
+        Copyright © 2014-2015 德合睿创
+    </div>
+</div>
 </body>
 </html>

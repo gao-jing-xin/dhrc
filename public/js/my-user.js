@@ -2,8 +2,12 @@
 
     //var fone
     var m = angular.module("myUser", ["ngCookies", "ui.bootstrap", "myBase"]);
-    m.factory("user", ["serverCall", "$cookies", "Input", function (serverCall, $cookies) {
+    m.controller("UserStateController", ["$scope", "serverCall", "$cookies", "$modal", "$window", function ($scope, serverCall, $cookies, $modal, $window) {
+
         var user = {
+            broadcastUserChanged: function () {
+                $scope.$broadcast("userStateChanged", user);
+            },
             state: "",
             userName: "",
             autoLogin: false,
@@ -21,14 +25,11 @@
                 this.userName = s.userName;
                 this.userType = s.userType;
                 this.state = "login";
+                this.broadcastUserChanged();
             },
             tryAutoLogin: function (callBack) {
                 var self = this;
-                if (self.hasLogin()) {
-                    if (callBack) {
-                        callBack(self);
-                    }
-                } else if ($cookies.sessionID) {//尝试自动登录
+                if (!self.hasLogin() && $cookies.sessionID) {//尝试自动登录
                     self.state = "tryAutoLogin";
                     serverCall("userAutoLogin", {}, function (result) {
                         if (result.success) {
@@ -45,6 +46,8 @@
                             callBack(self);
                         }
                     });
+                } else if (callBack) {
+                    callBack(self);
                 }
             },
             hasLogin: function () {
@@ -59,13 +62,52 @@
                     delete self.userName;
                     delete $cookies.sessionID;
                     self.state = "";
+                    self.broadcastUserChanged();
                     if (callBack) {
                         callBack.call(caller, result);
                     }
                 });
+            },
+            showInfoDlg: function () {
+                if (this.hasLogin()) {
+                    serverCall("userGetInfo", {}, function (result) {
+                        var userInfo;
+                        if ((userInfo = result.success) && userInfo.company) {
+                            $modal.open({
+                                templateUrl: 'tpl/user-info.html',
+                                controller: 'UserInfoController',
+                                scope: $scope,
+                                resolve: {
+                                    userInfo: function () {
+                                        return userInfo;
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+            },
+            showLoginDlg: function () {
+                if (!this.hasLogin()) {
+                    $modal.open({
+                        templateUrl: 'tpl/user-login.html',
+                        controller: "UserLoginController",
+                        size: "sm",
+                        scope: $scope,
+                        resolve: {
+                            userHint: function () {
+                                return undefined;
+                            }
+                        }
+                    });
+                }
             }
+
         };
-        return user;
+        $scope.goUrl = function (url) {
+            $window.location.href = url;
+        };
+        $scope.user = user;
     }]);
     m.factory("userInput", ["Input", function (Input) {
 
@@ -131,52 +173,25 @@
     m.directive("myUserLabel", function () {
         return {
             restrict: "AE",
-            scope: {},
             replace: true,
-            template:
-                '<a class="btn-link my-user-label" ng-click="click()" ng-class="{active:hasLogin()}" >\
-                    <span class="glyphicon glyphicon-user"></span><span ng-bind="title()"></span>\
+            template: '<a class="btn-link my-user-label" ng-click="click()" ng-class="{active:user.hasLogin()}" >\
+                    <span class="glyphicon glyphicon-user"></span><span ng-bind="title()">未登录</span>\
                 </a>',
-            controller: ["$scope", "user", "$modal", "serverCall", function ($scope, user, $modal, serverCall) {
+            controller: ["$scope", "serverCall", function ($scope, serverCall) {
                 $scope.click = function () {
-                    if (user.hasLogin()) {
-                        serverCall("userGetInfo", {}, function (result) {
-                            var userInfo;
-                            if ((userInfo = result.success) && userInfo.company) {
-                                $modal.open({
-                                    templateUrl: 'tpl/user-info.html',
-                                    controller: 'UserInfoController',
-                                    resolve: {
-                                        userInfo: function () {
-                                            return userInfo;
-                                        }
-                                    }
-                                });
-                            }
-                        });
+                    if ($scope.user.hasLogin()) {
+                        $scope.user.showInfoDlg()
                     } else {
-                        $modal.open({
-                            templateUrl: 'tpl/user-login.html',
-                            controller: "UserLoginController",
-                            size: "sm",
-                            resolve: {
-                                userHint: function () {
-                                    return undefined;
-                                }
-                            }
-                        });
+                        $scope.user.showLoginDlg()
                     }
                 };
-                $scope.hasLogin = function () {
-                    return user.hasLogin();
-                };
                 $scope.title = function () {
-                    return user.hasLogin() ? user.userName : "未登录";
+                    return $scope.user.hasLogin() ? $scope.user.userName : "未登录";
                 };
             }]
         };
     });
-    m.controller("UserLoginController", ["$scope", "user", "userInput", "userHint", "Input", "serverCall", function ($scope, user, userInput, userHint, Input, serverCall) {
+    m.controller("UserLoginController", ["$scope", "userInput", "userHint", "Input", "serverCall", function ($scope, userInput, userHint, Input, serverCall) {
         userInput.newUserName($scope);
         $scope.userName.value = userHint;
         userInput.newPassword($scope);
@@ -192,8 +207,7 @@
                 autoLogin: self.autoLogin.value
             }, function (result) {
                 if (result.success) {
-                    user.setLoginInfo(result.success);
-                    $scope.$broadcast("userStateChanged", user);
+                    $scope.user.setLoginInfo(result.success);
                     $scope.$close();
                 } else {
                     Input.assignErrors(self, result.errors);
@@ -201,8 +215,7 @@
             });
         };
     }]);
-    m.controller("UserInfoController", ["$scope", "user", "userInput", "Input", "serverCall", "userInfo", function ($scope, user, userInput, Input, serverCall, userInfo) {
-        $scope.userName = user.userName;
+    m.controller("UserInfoController", ["$scope", "userInput", "Input", "serverCall", "userInfo", function ($scope, userInput, Input, serverCall, userInfo) {
         userInput.newCompany($scope, userInfo.company);
         userInput.newSex($scope, userInfo.sex);
         userInput.newInput($scope, 'oldPW');
@@ -211,8 +224,7 @@
         userInput.newPhoneNo($scope, userInfo.phoneNo);
         userInput.newQQ($scope, userInfo.qq);
         $scope.logout = function () {
-            user.logout(this, function () {
-                $scope.$broadcast("userStateChanged", user);
+            $scope.user.logout(this, function () {
                 $scope.$close();
             });
         };

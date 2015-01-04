@@ -4,7 +4,7 @@ body {
     font-family: "Helvetica Neue", "Hiragino Sans GB", "Segoe UI", "Microsoft Yahei", "微软雅黑", Tahoma, Arial, STHeiti, sans-serif;
 }
 
-.my-dlg-header {
+.modal-header {
     padding: 5px 10px 5px 10px;
     background: rgba(0, 0, 0, .1);
     border-top-right-radius: 5px;
@@ -360,4 +360,6 @@ img.logo {
     background-color: #286090;
 }
 
-≈
+.resultH {
+    margin-top: 16px;
+}

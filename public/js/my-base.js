@@ -1,10 +1,5 @@
 (function (window, angular) {
     var m = angular.module("myBase", ["pasvaz.bindonce"]);
-    m.controller("BodyController", ["$scope", "$window", function ($scope, $window) {
-        $scope.goUrl = function (url) {
-            $window.location.href = url;
-        };
-    }]);
     m.filter("or", function () {
         return function (input, or) {
             return input || or;
@@ -42,7 +37,7 @@
             },
             resetValue: function (value) {
                 this.resetState();
-                if (angular.isUndefined(value)) {
+                if (value===undefined) {
                     this.value = this.oldValue
                 } else {
                     this.value = this.oldValue = value;
@@ -106,7 +101,7 @@
         Input.requiredValidator = function (title) {
             var msg = "请填写" + title;
             return function () {
-                if (this.value === "" || angular.isUndefined(this.value)) {
+                if (this.value === "" || this.value===undefined || this.value===null) {
                     return msg;
                 }
             }

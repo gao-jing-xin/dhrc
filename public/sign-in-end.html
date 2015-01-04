@@ -18,10 +18,10 @@
     <script>
         (function () {
             var m = angular.module("myUserSignInEnd", ["myBase", "myUser"]);
-            m.controller("SignInController", ["$scope", "user", "$cookies", function ($scope, user, $cookies) {
+            m.controller("SignInController", ["$scope", "$cookies", function ($scope, $cookies) {
                 switch ($scope.result = $cookies.verifySignInResult || 'error') {
                     case "ok":
-                        user.tryAutoLogin();
+                        $scope.user.tryAutoLogin();
                         break;
                 }
                 $scope.userName = $cookies.verifySignInUserName;
@@ -31,7 +31,7 @@
         })();
     </script>
 </head>
-<body>
+<body ng-controller="UserStateController">
 
 <header>
     <div class="container">
@@ -65,17 +65,14 @@
         </div>
         <div class="clear"></div>
     </div>
-    <div ng-show="result==='ok'">
-        尊敬的<label bo-bind="userName"></label>，您的注册已经完成！
-    </div>
-    <div ng-show="result==='already'">
-        尊敬的<label bo-bind="userName"></label>，您的注册已经完成！
-    </div>
-    <div ng-show="result==='error'">
-        <span bo-show="userName">尊敬的<label bo-bind="userName"></label>,</span>
-        该验证链接已经失效，请重新<a href="/sign-in.html">注册</a>。
-    </div>
-    <br>
+    <h3 class="resultH" ng-show="result!=='error'">
+        尊敬的{{userName}}，您的注册已经完成！
+    </h3>
+
+    <h3 class="resultH" ng-show="result==='error'">
+        <span bo-show="userName">尊敬的{{userName}},</span>
+        该验证链接已经失效，请重新<a href="/sign-in.html">注册</a>！
+    </h3>
 </div>
 <div class="copy-right">
     Copyright © 2014-2015 德合睿创
