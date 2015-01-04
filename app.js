@@ -71,6 +71,7 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var multer = require('multer');
 var app = express();
+app.set("view engine", "jade");
 
 
 // uncomment after placing your favicon in /public
