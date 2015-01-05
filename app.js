@@ -1,8 +1,21 @@
 var csv = require('csv');
 var stream = require('stream');
 var util = require('util');
-
 var mysql = require('mysql');
+var path = require('path');
+var nodemailer = require('nodemailer');
+var smtpPool = require('nodemailer-smtp-pool');
+var fs = require('fs');
+var express = require('express');
+var compress = require('compression');
+var favicon = require('serve-favicon');
+var logger = require('morgan');
+var cookieParser = require('cookie-parser');
+var bodyParser = require('body-parser');
+var multer = require('multer');
+var jade = require('jade');
+var crypto = require('crypto');
+
 var mysqlPool = mysql.createPool({
     connectionLimit: 10,
     host: '127.0.0.1',
@@ -12,8 +25,8 @@ var mysqlPool = mysql.createPool({
     multipleStatements: true
 });
 
-function callSP(spName, params, res, next, then) {
-    mysqlPool.query("call " + spName, params, function (err, returns) {
+mysqlPool.callSP = function (spName, params, res, next, then) {
+    this.query("call " + spName, params, function (err, returns) {
         if (err) {
             next(err);
             return;
@@ -44,11 +57,10 @@ function callSP(spName, params, res, next, then) {
             res.json({success: params.$acceptArray ? firstRows : (r || {})});
         }
     });
-}
-var path = require('path');
-var nodemailer = require('nodemailer');
-var smtpPool = require('nodemailer-smtp-pool');
+};
+
 var __mailFrom = 'gao_jing_xin@126.com';
+__mailFromTitle = "德合睿创<" + __mailFrom + ">";
 var mailTransport = nodemailer.createTransport(smtpPool({
     host: 'smtp.126.com',
     port: 25,
@@ -59,47 +71,9 @@ var mailTransport = nodemailer.createTransport(smtpPool({
     maxConnections: 5,
     maxMessages: 100
 }));
-var fs = require('fs');
 
-function readMailTpl(name) {
-    if (!mailTransport.__mail_tpl) {
-        mailTransport.__mail_tpl = {
-            build: function (name, params) {
-                var tmp = this[name];
-                if (!tmp) {
-                    return 'error!';
-                }
-                for (var n in params) {
-                    if (params.hasOwnProperty(n)) {
-                        tmp = tmp.replace(new RegExp('\\{\\{' + n + '\\}\\}', 'g'), params[n]);
-                    }
-                }
-                return tmp;
-            }
-        };
-        mailTransport.__mailFromTitle = "德合睿创<" + __mailFrom + ">";
-
-    }
-    fs.readFile(path.join(__dirname, "/mail-tpl/", name), {encoding: 'utf8'}, function (err, data) {
-        mailTransport.__mail_tpl[name] = err ? '<a href="{{url}}" >{{url}}</a>' : data;
-    });
-}
-
-readMailTpl('reset-pw.html');
-readMailTpl('sign-in.html');
-
-var express = require('express');
-var compress = require('compression');
-var favicon = require('serve-favicon');
-var logger = require('morgan');
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
-var multer = require('multer');
-var jade = require('jade');
 var app = express();
 app.set("view engine", "jade");
-
-
 // uncomment after placing your favicon in /public
 //app.use(favicon(__dirname + '/public/favicon.ico'));
 app.use(compress());
@@ -108,6 +82,12 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(multer({
+    dest: path.join(__dirname, '/uploads/'),
+    rename: function (fieldname, filename) {
+        return crypto.randomBytes(16).toString('hex');
+    }
+}));
 
 function extractParams(req) {
     var params = req.body;
@@ -116,38 +96,14 @@ function extractParams(req) {
     }
     return params;
 }
-function defineAPI(apiName, prepare, resolve) {
-    app.post('/api/' + apiName, function (req, res, next) {
-        var params = req.body;
-        if (!params.sessionID) {
-            params.sessionID = req.header('sessionID');
-        }
-        var spName, spParams = prepare(params), l;
-        if (spParams instanceof Array) {
-            if ((l = spParams.length) === 0) {
-                spName = apiName + '()';
-            } else {
-                spName = apiName + '(?';
-                while (--l > 0) {
-                    spName += ',?'
-                }
-                spName += ')';
-            }
-        } else if (typeof spParams === 'undefined') {
-            spName = apiName + '()';
-        } else {
-            spName = apiName + '(?)';
-        }
-        callSP(spName, spParams, res, next, resolve);
-    });
-}
 
 app.post('/api/userAutoLogin', function (req, res, next) {
-    callSP('user_auto_login(?)', extractParams(req).sessionID, res, next);
+    mysqlPool.callSP('user_auto_login(?)', extractParams(req).sessionID, res, next);
 });
+
 app.post('/api/userLogin', function (req, res, next) {
     var params = extractParams(req);
-    callSP('user_login(?,?,?)', [params.userName, params.password, params.autoLogin], res, next, function (err, rows) {
+    mysqlPool.callSP('user_login(?,?,?)', [params.userName, params.password, params.autoLogin], res, next, function (err, rows) {
         if (err) {
             res.json({errors: err});
             return;
@@ -162,7 +118,7 @@ app.post('/api/userLogin', function (req, res, next) {
 
 app.post('/api/cartGZHSelect', function (req, res, next) {
     var params = extractParams(req);
-    callSP('cart_gzh_select(?,?,?,?)', [params.sessionID, params.orderID, params.orderVersion, params.selectedID], res, next, function (err, rows, results) {
+    mysqlPool.callSP('cart_gzh_select(?,?,?,?)', [params.sessionID, params.orderID, params.orderVersion, params.selectedID], res, next, function (err, rows, results) {
         if (err) {
             res.json({errors: err});
             return;
@@ -179,7 +135,7 @@ app.post('/api/cartGZHSelect', function (req, res, next) {
 
 app.post('/api/cartGet', function (req, res, next) {
     var params = extractParams(req);
-    callSP('cart_get(?)', [params.sessionID], res, next, function (err, rows, results) {
+    mysqlPool.callSP('cart_get(?)', [params.sessionID], res, next, function (err, rows, results) {
         if (err) {
             res.json({errors: err});
             return;
@@ -192,7 +148,7 @@ app.post('/api/cartGet', function (req, res, next) {
 
 app.post('/api/cartGZHRemove', function (req, res, next) {
     var params = extractParams(req);
-    callSP('cart_gzh_remove(?,?,?,?)', [params.sessionID, params.orderID, params.orderVersion, params.gzhID], res, next, function (err, rows, results) {
+    mysqlPool.callSP('cart_gzh_remove(?,?,?,?)', [params.sessionID, params.orderID, params.orderVersion, params.gzhID], res, next, function (err, rows, results) {
         if (err) {
             res.json({errors: err});
             return;
@@ -218,7 +174,7 @@ function sendCommitMail(params, res, next) {
         };
         params.items = results;
         mailTransport.sendMail({
-            from: mailTransport.__mailFromTitle,
+            from: __mailFromTitle,
             to: params.userName,
             subject: "德合睿创 - 询价信息备查",
             html: jade.renderFile(path.join(__dirname, '/mail-tpl/cart-commit.jade'), params)
@@ -231,32 +187,9 @@ function sendCommitMail(params, res, next) {
         res.json({success: {}});
     });
 }
-app.get('/t', function (req, res, next) {
-    mysqlPool.query('select id,artTitle,artSubject from biz_order where id=1', function (err, results) {
-        if (err) {
-            next(err);
-            return;
-        }
-        var r = results[0];
-        mysqlPool.query("select g.title,g.code,g.price,i.dateStart,i.dateEnd\
-            from biz_gzh g join biz_order_item i on i.gzhID = g.id\
-            where i.orderID=?", r.id, function (err, results) {
-            if (err) {
-                next(err);
-                return;
-            }
-            r.ftd = function (d) {
-                return d.getFullYear() + ' 年 ' + (d.getMonth() + 1) + ' 月 ' + d.getDate() + ' 日';
-            };
-            r.items = results;
-            var html = jade.renderFile(path.join(__dirname, '/mail-tpl/cart-commit.jade'), r);
-            res.send(html);
-        });
-    });
-});
 app.post('/api/cartCommit', function (req, res, next) {
     var params = extractParams(req);
-    callSP('cart_commit(?,?,?,?,?)', [
+    mysqlPool.callSP('cart_commit(?,?,?,?,?)', [
         params.sessionID, params.orderID, params.orderVersion, params.artTitle, params.artSubject
     ], res, next, function (err, rows, results) {
         if (err) {
@@ -283,10 +216,9 @@ app.post('/api/cartCommit', function (req, res, next) {
     });
 });
 
-
 app.post('/api/gzhQuery', function (req, res, next) {
     var params = extractParams(req);
-    callSP('gzh_query_before(?,?,?)', [params.sessionID, params.orderID, params.orderVersion], res, next, function (err, rows, results) {
+    mysqlPool.callSP('gzh_query_before(?,?,?)', [params.sessionID, params.orderID, params.orderVersion], res, next, function (err, rows, results) {
         if (err) {
             res.json({errors: err});
             return;
@@ -318,7 +250,7 @@ app.post('/api/gzhQuery', function (req, res, next) {
 });
 app.post('/api/gzhSave', function (req, res, next) {
     var p = extractParams(req);
-    callSP('gzh_save(?,?,?,?,?,?,?)', [
+    mysqlPool.callSP('gzh_save(?,?,?,?,?,?,?)', [
         p.sessionID,
         p.id,
         p.notFA,
@@ -335,14 +267,6 @@ app.post('/api/gzhSave', function (req, res, next) {
         res.json({success: rows[0]});
     });
 });
-
-var crypto = require('crypto');
-app.use(multer({
-    dest: path.join(__dirname, '/uploads/'),
-    rename: function (fieldname, filename) {
-        return crypto.randomBytes(16).toString('hex');
-    }
-}));
 
 function toSqlValue(str, t) {
     var v;
@@ -531,11 +455,11 @@ app.post('/uploads/gzh', function (req, res, next) {
 
 app.post('/api/userLogout', function (req, res, next) {
     var params = extractParams(req);
-    callSP('user_logout(?)', params.sessionID, res, next);
+    mysqlPool.callSP('user_logout(?)', params.sessionID, res, next);
 });
 
 app.get('/internal/userResetPW', function (req, res, next) {
-    callSP('user_reset_pw_t(?,?)', [req.query.ticket, req.query.i], res, next, function (err, rows) {
+    mysqlPool.callSP('user_reset_pw_t(?,?)', [req.query.ticket, req.query.i], res, next, function (err, rows) {
         if (rows) {
             res.cookie('resetPWTicket', rows[0].ticket);
             res.cookie('resetPWUserName', rows[0].userName);
@@ -548,17 +472,17 @@ app.get('/internal/userResetPW', function (req, res, next) {
 app.post('/api/userResetPW', function (req, res, next) {
 
     var params = extractParams(req);
-    callSP('user_reset_pw(?)', params.userName, res, next, function (err, rows) {
+    mysqlPool.callSP('user_reset_pw(?)', params.userName, res, next, function (err, rows) {
         if (err) {
             res.json({errors: err});
             return;
         }
         var r = rows[0];
         mailTransport.sendMail({
-            from: mailTransport.__mailFromTitle,
+            from: __mailFromTitle,
             to: params.userName,
             subject: "德合睿创 - 用户密码重置",
-            html: mailTransport.__mail_tpl.build("reset-pw.html", {
+            html: jade.renderFile(path.join(__dirname, '/mail-tpl/reset-pw.jade'), {
                 url: app.dhrc_host + "/internal/userResetPW?ticket=" + r.ticket + "&i=" + r.userID,
                 userName: params.userName
             })
@@ -575,7 +499,7 @@ app.post('/api/userResetPW', function (req, res, next) {
 
 app.post('/api/userResetPWEnd', function (req, res, next) {
     var params = extractParams(req);
-    callSP('user_reset_pw_end(?,?)', [params.ticket, params.password], res, next, function (err, rows) {
+    mysqlPool.callSP('user_reset_pw_end(?,?)', [params.ticket, params.password], res, next, function (err, rows) {
         if (err) {
             res.json({errors: err});
             return;
@@ -587,20 +511,20 @@ app.post('/api/userResetPWEnd', function (req, res, next) {
 
 app.post('/api/userChangeInfo', function (req, res, next) {
     var params = extractParams(req);
-    callSP('user_change_info(?,?,?,?,?)', [params.sessionID, params.company, params.sex, params.phoneNo, params.qq], res, next);
+    mysqlPool.callSP('user_change_info(?,?,?,?,?)', [params.sessionID, params.company, params.sex, params.phoneNo, params.qq], res, next);
 });
 app.post('/api/userGetInfo', function (req, res, next) {
-    callSP('user_get_info(?)', extractParams(req).sessionID, res, next);
+    mysqlPool.callSP('user_get_info(?)', extractParams(req).sessionID, res, next);
 });
 
 app.post('/api/userChangePW', function (req, res, next) {
     var params = extractParams(req);
-    callSP('user_change_pw(?,?,?)', [params.sessionID, params.oldPW, params.password], res, next);
+    mysqlPool.callSP('user_change_pw(?,?,?)', [params.sessionID, params.oldPW, params.password], res, next);
 });
 
 app.post('/api/userSignIn', function (req, res, next) {
     var params = extractParams(req);
-    callSP('user_sign_in(?,?,?,?,?,?)', [
+    mysqlPool.callSP('user_sign_in(?,?,?,?,?,?)', [
         params.userName,
         params.password,
         params.company,
@@ -614,10 +538,10 @@ app.post('/api/userSignIn', function (req, res, next) {
         }
         var r = rows[0];
         mailTransport.sendMail({
-            from: mailTransport.__mailFromTitle,
+            from: __mailFromTitle,
             to: params.userName,
             subject: "德合睿创 - 用户注册邮件确认",
-            html: mailTransport.__mail_tpl.build("sign-in.html", {
+            html: jade.renderFile(path.join(__dirname, "/mail-tpl/sign-in.jade"), {
                 url: app.dhrc_host + "/internal/userVerifyEmail?ticket=" + r.ticket + "&i=" + r.userID,
                 userName: params.userName
             })
@@ -631,7 +555,7 @@ app.post('/api/userSignIn', function (req, res, next) {
 });
 
 app.get('/internal/userVerifyEmail', function (req, res, next) {
-    callSP('user_sign_in_v(?,?)', [req.query.ticket, req.query.i], res, next, function (err, rows) {
+    mysqlPool.callSP('user_sign_in_v(?,?)', [req.query.ticket, req.query.i], res, next, function (err, rows) {
         if (rows) {
             var r = rows[0];
             res.cookie('verifySignInResult', r.result);

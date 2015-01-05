@@ -32,7 +32,6 @@
     </script>
 </head>
 <body ng-controller="UserStateController">
-
 <header>
     <div class="container">
         <img class="logo" src="./images/logo.png" alt="德合睿创" title="德合睿创">
@@ -48,35 +47,38 @@
     </div>
 </header>
 
-<div class="row" bindonce ng-controller="SignInController">
-    <div>
-        <div class="step">
-            <span class="text">1. 填写信息</span>
-            <span class="arrow"></span>
+
+<div class="container">
+    <h3>用户注册</h3>
+    <div class="row" bindonce ng-controller="SignInController">
+        <div>
+            <div class="step">
+                <span class="text">1. 填写信息</span>
+                <span class="arrow"></span>
+            </div>
+            <div class="step">
+                <span class="arrow-start"></span>
+                <span class="text">2. 验证邮箱</span>
+                <span class="arrow"></span>
+            </div>
+            <div class="step selected">
+                <span class="arrow-start"></span>
+                <span class="text">3. 完成注册</span>
+            </div>
+            <div class="clear"></div>
         </div>
-        <div class="step">
-            <span class="arrow-start"></span>
-            <span class="text">2. 验证邮箱</span>
-            <span class="arrow"></span>
-        </div>
-        <div class="step selected">
-            <span class="arrow-start"></span>
-            <span class="text">3. 完成注册</span>
-        </div>
-        <div class="clear"></div>
+        <h3 class="resultH" ng-show="result!=='error'">
+            尊敬的{{userName}}，您的注册已经完成！
+        </h3>
+
+        <h3 class="resultH" ng-show="result==='error'">
+            <span bo-show="userName">尊敬的{{userName}},</span>
+            该验证链接已经失效，请重新<a href="/sign-in.html">注册</a>！
+        </h3>
     </div>
-    <h3 class="resultH" ng-show="result!=='error'">
-        尊敬的{{userName}}，您的注册已经完成！
-    </h3>
-
-    <h3 class="resultH" ng-show="result==='error'">
-        <span bo-show="userName">尊敬的{{userName}},</span>
-        该验证链接已经失效，请重新<a href="/sign-in.html">注册</a>！
-    </h3>
+    <div class="copy-right">
+        Copyright © 2014-2015 德合睿创
+    </div>
 </div>
-<div class="copy-right">
-    Copyright © 2014-2015 德合睿创
-</div>
-
 </body>
 </html>

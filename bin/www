@@ -1,22 +1,12 @@
 #!/usr/bin/env node
 var debug = require('debug')('DHRC');
 var dhrc = require('../app');
-dhrc.dhrc_host = 'http://localhost:8080';
-
-var application_root = __dirname,
-    express = require( 'express'),
-    vhost = require('vhost');
-
-//Create server
-var app = express();
-
-//Use the virtual hosts
-app.use(vhost('localhost',dhrc));
-
-//var app = dhrc;
-
-app.set('port', process.env.PORT || 8080);
-
-var server = app.listen(app.get('port'), function() {
-  debug('Express server listening on port ' + server.address().port);
+var host = process.env.HOST || 'localhost';
+var port = process.env.PORT || 8080;
+dhrc.dhrc_host = 'http://' + host + (port == 80 ? '' : (':' + port));
+var vhost = require('vhost');
+var app = require('express')();
+app.use(vhost(host, dhrc));
+app.listen(port, function () {
+    debug('Express server listening on port ' + port);
 });
