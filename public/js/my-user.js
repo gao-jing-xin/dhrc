@@ -1,4 +1,4 @@
-(function (window, angular) {
+(function (angular) {
 
     //var fone
     var m = angular.module("myUser", ["ngCookies", "ui.bootstrap", "myBase"]);
@@ -284,4 +284,4 @@
         $scope.editing = "";
     }]);
 })
-(window, window.angular);
+(window.angular);

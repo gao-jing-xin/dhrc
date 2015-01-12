@@ -14,11 +14,13 @@ body {
 .my-user-label {
     font-size: 0.8em;
     color: #dcdcdc;
+    cursor: pointer;
 }
 
 .my-user-label.active {
     color: darkgreen;
 }
+
 .my-user-label .glyphicon {
     margin-right: 4px;
 }
@@ -239,12 +241,6 @@ img.logo {
     top: 0;
 }
 
-.head-bar-content .pagination-sm {
-    display: inline-block;
-    margin: 5px 4px 0px 0px;
-    float: right;
-}
-
 .affix, .affix-top, .affix-bottom {
     background-color: #fff;
     width: 100%;
@@ -271,10 +267,11 @@ img.logo {
 
 .copy-right {
     color: #a5a5a1;
-    padding: 10px 0;
+    padding: 20px 0 10px 0;
     text-align: center;
-    margin-top: 30px;
+    margin-top: 15px;
     margin-bottom: 50px;
+    border-top: 1px solid #f3f3f3;
 }
 
 .bodyBox {
@@ -362,4 +359,28 @@ img.logo {
 
 .resultH {
     margin-top: 16px;
+}
+
+.enquiry-pages-bar {
+    padding: 0 14px 0 10px;
+}
+
+.enquiry-pages-bar .pagination-sm {
+    margin-top: 6px;
+    margin-bottom: 6px;
+    float: right;
+}
+
+.condition {
+    padding-top: 6px;
+    padding-bottom: 6px;
+    margin-top: 6px;
+    margin-bottom: 6px;
+}
+
+.condition.on-top{
+    border-bottom: 1px solid #f3f3f3;
+}
+.condition.on-bottom{
+    border-top: 1px solid #f3f3f3;
 }

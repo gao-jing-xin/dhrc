@@ -1,4 +1,4 @@
-(function (window, angular) {
+(function (angular) {
     var m = angular.module("myBase", ["pasvaz.bindonce"]);
     m.filter("or", function () {
         return function (input, or) {
@@ -37,7 +37,7 @@
             },
             resetValue: function (value) {
                 this.resetState();
-                if (value===undefined) {
+                if (value === undefined) {
                     this.value = this.oldValue
                 } else {
                     this.value = this.oldValue = value;
@@ -101,7 +101,7 @@
         Input.requiredValidator = function (title) {
             var msg = "请填写" + title;
             return function () {
-                if (this.value === "" || this.value===undefined || this.value===null) {
+                if (this.value === "" || this.value === undefined || this.value === null) {
                     return msg;
                 }
             }
@@ -165,8 +165,7 @@
                 myIconClass: "@",
                 myInputType: "@"
             },
-            template:
-                '<div class="form-group" bindonce ng-class="{\'has-error\' : myInput.hasError()}">\
+            template: '<div class="form-group" bindonce ng-class="{\'has-error\' : myInput.hasError()}">\
                     <label ng-transclude></label>\
                     <label class="control-label small" ng-show="myInput.hasError()">&nbsp;&nbsp;\
                         <span class="glyphicon glyphicon-remove-circle"></span>&nbsp;{{myInput.msg}}</label>\
@@ -187,8 +186,7 @@
             scope: {
                 myCheckBox: "="
             },
-            template:
-                '<div class="form-group">\
+            template: '<div class="form-group">\
                     <div class="checkbox">\
                         <label>\
                             <input type="checkbox" ng-model="myCheckBox.value" ng-change="myCheckBox.onChanged()">\
@@ -224,8 +222,7 @@
                 okTitle: "@",
                 cancelTitle: "@"
             },
-            template:
-                '<div bindonce class="pull-right">\
+            template: '<div bindonce class="pull-right">\
                     <button class="btn btn-primary" ng-click="onOk()" bo-bind="okTitle | or:\'确 定\'"></button>\
                     <button class="btn btn-default" ng-click="onCancel()" bo-bind="cancelTitle | or:\'取消\'"></button>\
                 </div>'
@@ -286,5 +283,4 @@
             });
         }
     }]);
-})
-(window, window.angular);
+})(window.angular);

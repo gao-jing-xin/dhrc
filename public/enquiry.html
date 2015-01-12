@@ -17,129 +17,7 @@
     <script src="bower_components/angular-bindonce/bindonce.min.js"></script>
     <script src="js/my-base.js"></script>
     <script src="js/my-user.js"></script>
-
-    <script>
-        (function () {
-            var m = angular.module("myEnquiry", ["myBase", "myUser"]);
-            m.controller("EnquiryController", ["$scope", "userInput", "serverCall", "$modal", "$window", function ($scope, userInput, serverCall, $modal, $window) {
-
-                var orderID, orderVersion, cartItems;
-
-                function setCartItems(cItems) {
-                    cartItems = cItems;
-                    $scope.totalPrice = cItems.totalPrice;
-                    $scope.cartItemCount = cItems.count;
-                    delete cItems.totalPrice;
-                    delete cItems.count;
-                }
-
-                function reset() {
-                    $scope.totalPrice = 0;
-                    $scope.cartItemCount = 0;
-                    $scope.gzhs = [];
-                    $scope.currentPage = 1;
-                    $scope.totalCount = 0;
-                    $scope.errorMsg = undefined;
-                    cartItems = {};
-                    orderID = undefined;
-                    orderVersion = undefined;
-                }
-
-                $scope.selectGZH = function (item) {
-                    $scope.errorMsg = undefined;
-
-                    var selectedID = item.isSelected ? -item.id : item.id;
-
-                    serverCall('cartGZHSelect', {
-                        orderID: orderID,
-                        orderVersion: orderVersion,
-                        selectedID: selectedID
-                    }, function (result) {
-                        var s;
-                        if (s = result.success) {
-                            if (s.cartItems) {
-                                setCartItems(s.cartItems);
-                            } else if (item.isSelected = (selectedID > 0)) {
-                                cartItems[selectedID] = item.price;
-                                $scope.totalPrice += item.price;
-                                $scope.cartItemCount++;
-                            } else {
-                                delete cartItems[selectedID];
-                                $scope.totalPrice -= item.price;
-                                $scope.cartItemCount--;
-                            }
-                            orderVersion = s.orderVersion;
-                        }
-                    });
-                };
-                $scope.getLogoUrl = function (item) {
-                    return './logos/' + item.code + '.jpeg';
-                };
-                $scope.selectBtnTitle = function (item) {
-                    return item.isSelected ? '取消选择' : '选择';
-                };
-                var COUNT_PER_PAGE = $scope.COUNT_PER_PAGE = 30;
-                $scope.queryGZH = function () {
-                    $scope.errorMsg = undefined;
-                    var qid = ++$scope.queryGZH.queryId;
-                    serverCall("gzhQuery", {
-                        orderID: orderID,
-                        orderVersion: orderVersion,
-                        offset: ($scope.currentPage - 1) * COUNT_PER_PAGE,
-                        count: COUNT_PER_PAGE
-                    }, function (result) {
-                        if (qid != $scope.queryGZH.queryId) {
-                            return;
-                        }
-                        var s;
-                        if (s = result.success) {
-                            if (s.cartItems) {
-                                orderID = s.orderID;
-                                orderVersion = s.orderVersion;
-                                setCartItems(s.cartItems);
-                            }
-                            $scope.totalCount = s.totalCount;
-                            $scope.gzhs = s.rows;
-                            angular.forEach($scope.gzhs, function (item) {
-                                if (cartItems[item.id] !== undefined) {
-                                    item.isSelected = true;
-                                }
-                                if (item.hasLogo) {
-                                    item.logo = item.code + '.jpg';
-                                } else {
-                                    item.logo = '_default_.jpg';
-                                }
-                            });
-                        } else {
-                            $scope.errorMsg = result.errors.error;
-                            $scope.gzhs = [];
-                        }
-                    });
-                };
-                $scope.queryGZH.queryId = 0;
-                $scope.$on("userStateChanged", function () {
-                    if ($scope.user.hasLogin()) {
-                        $scope.queryGZH();
-                    } else {
-                        reset();
-                    }
-                });
-                reset();
-                $scope.user.tryAutoLogin(function (user) {
-                    if (!user.hasLogin()) {
-                        user.showLoginDlg();
-                    }
-                });
-                $scope.nextStep = function () {
-                    if (this.cartItemCount === 0) {
-                        this.errorMsg = '未选择任何公众号！';
-                        return;
-                    }
-                    $scope.goUrl('enquiry-step-2.html');
-                };
-            }]);
-        })();
-    </script>
+    <script src="js/my-enquiry.js"></script>
 </head>
 <body bindonce ng-controller="UserStateController">
 <header>
@@ -184,11 +62,6 @@
                         <span class="total-price"><span>≈¥</span><span ng-bind="totalPrice"></span></span>
                         <a class="btn btn-primary" href="#" ng-click="nextStep()">下一步</a>
                     </div>
-                    <div pagination total-items="totalCount" ng-model="currentPage" ng-change="queryGZH()" max-size="5"
-                         class="pagination-sm" boundary-links="true"
-                         previous-text="&lsaquo;" next-text="&rsaquo;" items-per-page="COUNT_PER_PAGE"
-                         first-text="&laquo;"
-                         last-text="&raquo;"></div>
                     <div class="clear"></div>
                 </div>
             </div>
@@ -200,25 +73,93 @@
         <div class="clear"></div>
     </div>
 
-    <div class="container body">
-        <div>
-            <div class="gzh-item" ng-class="{'selected':item.isSelected}" ng-repeat="item in gzhs">
-                <div class="gzh-icon">
-                    <img ng-src="./logos/{{item.logo}}">
+    <div class="container body" >
+        <div ng-show="!user.hasLogin()">
+            <h3>请先<a style="cursor: pointer" ng-click="user.showLoginDlg()" >登录</a></h3>
+        </div>
+        <div ng-show="user.hasLogin()">
+            <div class="enquiry-pages-bar">
+                <div class="condition on-top">
+                    <label>价格范围：</label>
+                    <select ng-model="priceRange" ng-change="priceRangeChange()">
+                        <option value="all">全部价格</option>
+                        <option value="500-1k">¥500 - ¥1000</option>
+                        <option value="1k-3k">¥1000 - ¥3000</option>
+                        <option value="3k-5k">¥3000 - ¥5000</option>
+                        <option value="5k-1w">¥5000 - ¥1w</option>
+                        <option value="1w-2w">¥1w - ¥2w</option>
+                        <option value="2w+">¥2w以上</option>
+                    </select>
+                    <span>&nbsp;&nbsp;</span>
+                    <label>公众号类型：</label>
+                    <label class="checkbox-inline">
+                        <input type="checkbox" ng-model="all_type" ng-change="all_type_change()"><b>全部</b>
+                    </label>
+                    <label class="checkbox-inline" ng-repeat="type in types">
+                        <input type="checkbox" ng-model="type.selected" ng-change="typesChange()"><span
+                            ng-bind="type.name"></span>
+                    </label>
+                </div>
+                <div ng-show="totalCount>COUNT_PER_PAGE">
+                    <div pagination total-items="totalCount" ng-model="currentPage" ng-change="queryGZH()" max-size="50"
+                         class="pagination-sm" boundary-links="true"
+                         previous-text="上页" next-text="下页" items-per-page="COUNT_PER_PAGE"
+                         first-text="首页"
+                         last-text="末页"></div>
+                    <div class=clear></div>
+                </div>
+            </div>
+            <div>
+                <div class="gzh-item" ng-class="{'selected':item.isSelected}" ng-repeat="item in gzhs">
+                    <div class="gzh-icon">
+                        <img ng-src="./logos/{{item.logo}}">
 
-                    <div class="gzh-type"><span class="badge">{{item.type}}</span></div>
-                </div>
-                <div class="gzh-info">
-                    <div class="gzh-title"><span ng-attr-tooltip="微信ID：{{item.code}}">{{item.title}}</span></div>
-                    <div class="gzh-fans">粉丝数：{{item.fans}}<span class="wan">万</span></div>
-                    <div class="gzh-reads"><span tooltip="周 / 月">阅读量：{{item.rW}} / {{item.rM}}</span></div>
-                </div>
-                <div class="gzh-right">
-                    <div class="gzh-price"><span>≈¥</span><span>{{item.price}}</span></div>
-                    <div class="btn-gzh">
-                        <button class="btn btn-default btn-sm" ng-click="selectGZH(item)">{{selectBtnTitle(item)}}
-                        </button>
+                        <div class="gzh-type"><span class="badge">{{item.type}}</span></div>
                     </div>
+                    <div class="gzh-info">
+                        <div class="gzh-title"><span ng-attr-tooltip="微信ID：{{item.code}}">{{item.title}}</span></div>
+                        <div class="gzh-fans">粉丝数：{{item.fans}}<span class="wan">万</span></div>
+                        <div class="gzh-reads"><span tooltip="周 / 月">阅读量：{{item.rW}} / {{item.rM}}</span></div>
+                    </div>
+                    <div class="gzh-right">
+                        <div class="gzh-price"><span>≈¥</span><span>{{item.price}}</span></div>
+                        <div class="btn-gzh">
+                            <button class="btn btn-default btn-sm" ng-click="selectGZH(item)">{{selectBtnTitle(item)}}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class=clear></div>
+            </div>
+            <div class="enquiry-pages-bar" ng-show="totalCount>0">
+                <div ng-show="totalCount>COUNT_PER_PAGE">
+                    <div pagination total-items="totalCount" ng-model="currentPage" ng-change="queryGZH()" max-size="50"
+                         class="pagination-sm" boundary-links="true"
+                         previous-text="上页" next-text="下页" items-per-page="COUNT_PER_PAGE"
+                         first-text="首页"
+                         last-text="末页"></div>
+                    <div class=clear></div>
+                </div>
+                <div class="condition on-bottom">
+                    <label>价格范围：</label>
+                    <select ng-model="priceRange" ng-change="priceRangeChange()">
+                        <option value="all">全部价格</option>
+                        <option value="500-1k">¥500 - ¥1000</option>
+                        <option value="1k-3k">¥1000 - ¥3000</option>
+                        <option value="3k-5k">¥3000 - ¥5000</option>
+                        <option value="5k-1w">¥5000 - ¥1w</option>
+                        <option value="1w-2w">¥1w - ¥2w</option>
+                        <option value="2w+">¥2w以上</option>
+                    </select>
+                    <span>&nbsp;&nbsp;</span>
+                    <label>公众号类型：</label>
+                    <label class="checkbox-inline">
+                        <input type="checkbox" ng-model="all_type" ng-change="all_type_change()"><b>全部</b>
+                    </label>
+                    <label class="checkbox-inline" ng-repeat="type in types">
+                        <input type="checkbox" ng-model="type.selected" ng-change="typesChange()"><span
+                            ng-bind="type.name"></span>
+                    </label>
                 </div>
             </div>
         </div>
@@ -226,6 +167,5 @@
     <div class="copy-right">
         Copyright © 2014-2015 德合睿创
     </div>
-</div>
 </body>
 </html>

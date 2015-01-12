@@ -218,13 +218,14 @@ app.post('/api/cartCommit', function (req, res, next) {
 
 app.post('/api/gzhQuery', function (req, res, next) {
     var params = extractParams(req);
-    mysqlPool.callSP('gzh_query_before(?,?,?)', [params.sessionID, params.orderID, params.orderVersion], res, next, function (err, rows, results) {
+    var hasTypes = params.queryTypes && params.queryTypes.length > 0;
+    mysqlPool.callSP('gzh_query_before(?,?,?,?)', [params.sessionID, params.orderID, params.orderVersion, !hasTypes], res, next, function (err, rows, results) {
         if (err) {
             res.json({errors: err});
             return;
         }
-        var r = rows[0], ids = results[1];
-        if (r.orderVersion && ids instanceof Array) {
+        var r = rows[0], ids = results[1], types;
+        if (r.orderVersion && ids instanceof Array && ids.length > 0 && ids[0].gzhID) {
             var cItems = r.cartItems = {
                 count: 0,
                 totalPrice: 0
@@ -235,9 +236,51 @@ app.post('/api/gzhQuery', function (req, res, next) {
                 cItems.totalPrice += p;
                 cItems.count++;
             });
+            types = results[2];
+            if (types instanceof Array && types.length > 0) {
+                r.types = types;
+            }
         }
-        mysqlPool.query('select id,code,title,type,fans / 10000 fans,rW,rM,price from biz_gzh order by fans,id limit ?,?',
-            [params.offset, params.count], function (err, returns) {
+        if (ids instanceof Array && ids.length > 0 && ids[0].name) {
+            r.types = types;
+        }
+
+        function buildWhere() {
+            var where = [];
+            if (params.priceMin) {
+                where.push(mysql.format('price>=?', params.priceMin));
+            }
+            if (params.priceMax) {
+                where.push(mysql.format('price<?', params.priceMax));
+            }
+            if (hasTypes) {
+                var types = [];
+                params.queryTypes.forEach(function (type) {
+                    if (type.selected) {
+                        types.push(mysql.format('?', type.name));
+                    }
+                });
+                if (types.length == 0) {
+                    where.push('1=2');
+                } else if (types.length !== params.queryTypes.length) {
+                    where.push('type in (' + types.join(',') + ')');
+                }
+            }
+            if (where.length > 0) {
+                return ' where ' + where.join(' and ') + ' ';
+            } else {
+                return '';
+            }
+        }
+        var where = buildWhere();
+        mysqlPool.query('select count(*) totalCount from biz_gzh' + where,function(err,returns){
+            if (err) {
+                next(err);
+                return;
+            }
+            r.totalCount = returns[0].totalCount;
+            mysqlPool.query('select id,code,title,type,fans / 10000 fans,rW,rM,price,notFA from biz_gzh ' + where
+            + ' order by fans,id limit ?,?', [params.offset, params.count], function (err, returns) {
                 if (err) {
                     next(err);
                     return;
@@ -246,6 +289,7 @@ app.post('/api/gzhQuery', function (req, res, next) {
                 res.json({success: r});
 
             });
+        });
     });
 });
 app.post('/api/gzhSave', function (req, res, next) {
