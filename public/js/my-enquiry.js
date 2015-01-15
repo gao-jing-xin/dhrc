@@ -169,5 +169,9 @@
             }
             $scope.goUrl('enquiry-step-2.html');
         };
+        $scope.totalPages = function(){
+            return Math.floor(($scope.totalCount + COUNT_PER_PAGE-1) / COUNT_PER_PAGE)
+        }
     }]);
+
 })(window.angular);

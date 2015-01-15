@@ -60,7 +60,7 @@
                         <i class="glyphicon glyphicon-shopping-cart"></i>
                         <span class="badge" ng-bind="cartItemCount"></span>
                         <span class="total-price"><span>≈¥</span><span ng-bind="totalPrice"></span></span>
-                        <a class="btn btn-primary" href="#" ng-click="nextStep()">下一步</a>
+                        <a class="btn btn-primary" href="#" ng-click="nextStep()" ng-disabled="!user.hasLogin()">下一步</a>
                     </div>
                     <div class="clear"></div>
                 </div>
@@ -72,100 +72,103 @@
 
         <div class="clear"></div>
     </div>
+    <div class="container login-hint" ng-show="!user.hasLogin()">
+        <h3>请先<a ng-click="user.showLoginDlg()">登录</a></h3>
+    </div>
 
-    <div class="container body" >
-        <div ng-show="!user.hasLogin()">
-            <h3>请先<a style="cursor: pointer" ng-click="user.showLoginDlg()" >登录</a></h3>
-        </div>
-        <div ng-show="user.hasLogin()">
-            <div class="enquiry-pages-bar">
-                <div class="condition on-top">
-                    <label>价格范围：</label>
-                    <select ng-model="priceRange" ng-change="priceRangeChange()">
-                        <option value="all">全部价格</option>
-                        <option value="500-1k">¥500 - ¥1000</option>
-                        <option value="1k-3k">¥1000 - ¥3000</option>
-                        <option value="3k-5k">¥3000 - ¥5000</option>
-                        <option value="5k-1w">¥5000 - ¥1w</option>
-                        <option value="1w-2w">¥1w - ¥2w</option>
-                        <option value="2w+">¥2w以上</option>
-                    </select>
-                    <span>&nbsp;&nbsp;</span>
-                    <label>公众号类型：</label>
-                    <label class="checkbox-inline">
-                        <input type="checkbox" ng-model="all_type" ng-change="all_type_change()"><b>全部</b>
-                    </label>
-                    <label class="checkbox-inline" ng-repeat="type in types">
-                        <input type="checkbox" ng-model="type.selected" ng-change="typesChange()"><span
-                            ng-bind="type.name"></span>
-                    </label>
-                </div>
-                <div ng-show="totalCount>COUNT_PER_PAGE">
-                    <div pagination total-items="totalCount" ng-model="currentPage" ng-change="queryGZH()" max-size="50"
-                         class="pagination-sm" boundary-links="true"
-                         previous-text="上页" next-text="下页" items-per-page="COUNT_PER_PAGE"
-                         first-text="首页"
-                         last-text="末页"></div>
-                    <div class=clear></div>
-                </div>
+    <div class="container" ng-show="user.hasLogin()">
+        <div class="enquiry-pages-bar">
+            <div class="condition on-top">
+                <label>价格范围：</label>
+                <select ng-model="priceRange" ng-change="priceRangeChange()">
+                    <option value="all">全部价格</option>
+                    <option value="500-1k">¥500 - ¥1000</option>
+                    <option value="1k-3k">¥1000 - ¥3000</option>
+                    <option value="3k-5k">¥3000 - ¥5000</option>
+                    <option value="5k-1w">¥5000 - ¥1w</option>
+                    <option value="1w-2w">¥1w - ¥2w</option>
+                    <option value="2w+">¥2w以上</option>
+                </select>
+                <span>&nbsp;&nbsp;</span>
+                <label>公众号类型：</label>
+                <label class="checkbox-inline">
+                    <input type="checkbox" ng-model="all_type" ng-change="all_type_change()"><b>全部</b>
+                </label>
+                <label class="checkbox-inline" ng-repeat="type in types">
+                    <input type="checkbox" ng-model="type.selected" ng-change="typesChange()"><span
+                        ng-bind="type.name"></span>
+                </label>
             </div>
-            <div>
-                <div class="gzh-item" ng-class="{'selected':item.isSelected}" ng-repeat="item in gzhs">
-                    <div class="gzh-icon">
-                        <img ng-src="./logos/{{item.logo}}">
+            <div ng-show="totalCount>COUNT_PER_PAGE">
+                <div pagination total-items="totalCount" ng-model="currentPage" ng-change="queryGZH()" max-size="50"
+                     class="pagination-sm" boundary-links="true"
+                     previous-text="上页" next-text="下页" items-per-page="COUNT_PER_PAGE"
+                     first-text="首页"
+                     last-text="末页"></div>
+                <b class="pages-info">公众号 {{totalCount}} 个，共 {{totalPages()}} 页</b>
 
-                        <div class="gzh-type"><span class="badge">{{item.type}}</span></div>
-                    </div>
-                    <div class="gzh-info">
-                        <div class="gzh-title"><span ng-attr-tooltip="微信ID：{{item.code}}">{{item.title}}</span></div>
-                        <div class="gzh-fans">粉丝数：{{item.fans}}<span class="wan">万</span></div>
-                        <div class="gzh-reads"><span tooltip="周 / 月">阅读量：{{item.rW}} / {{item.rM}}</span></div>
-                    </div>
-                    <div class="gzh-right">
-                        <div class="gzh-price"><span>≈¥</span><span>{{item.price}}</span></div>
-                        <div class="btn-gzh">
-                            <button class="btn btn-default btn-sm" ng-click="selectGZH(item)">{{selectBtnTitle(item)}}
-                            </button>
-                        </div>
-                    </div>
-                </div>
                 <div class=clear></div>
             </div>
-            <div class="enquiry-pages-bar" ng-show="totalCount>0">
-                <div ng-show="totalCount>COUNT_PER_PAGE">
-                    <div pagination total-items="totalCount" ng-model="currentPage" ng-change="queryGZH()" max-size="50"
-                         class="pagination-sm" boundary-links="true"
-                         previous-text="上页" next-text="下页" items-per-page="COUNT_PER_PAGE"
-                         first-text="首页"
-                         last-text="末页"></div>
-                    <div class=clear></div>
+        </div>
+        <div>
+            <div class="gzh-item" ng-class="{'selected':item.isSelected}" ng-repeat="item in gzhs">
+                <div class="gzh-icon">
+                    <img ng-src="./logos/{{item.logo}}">
+
+                    <div class="gzh-type"><span class="badge">{{item.type}}</span></div>
                 </div>
-                <div class="condition on-bottom">
-                    <label>价格范围：</label>
-                    <select ng-model="priceRange" ng-change="priceRangeChange()">
-                        <option value="all">全部价格</option>
-                        <option value="500-1k">¥500 - ¥1000</option>
-                        <option value="1k-3k">¥1000 - ¥3000</option>
-                        <option value="3k-5k">¥3000 - ¥5000</option>
-                        <option value="5k-1w">¥5000 - ¥1w</option>
-                        <option value="1w-2w">¥1w - ¥2w</option>
-                        <option value="2w+">¥2w以上</option>
-                    </select>
-                    <span>&nbsp;&nbsp;</span>
-                    <label>公众号类型：</label>
-                    <label class="checkbox-inline">
-                        <input type="checkbox" ng-model="all_type" ng-change="all_type_change()"><b>全部</b>
-                    </label>
-                    <label class="checkbox-inline" ng-repeat="type in types">
-                        <input type="checkbox" ng-model="type.selected" ng-change="typesChange()"><span
-                            ng-bind="type.name"></span>
-                    </label>
+                <div class="gzh-info">
+                    <div class="gzh-title"><span ng-attr-tooltip="微信ID：{{item.code}}">{{item.title}}</span></div>
+                    <div class="gzh-fans">粉丝数：{{item.fans}}<span class="wan">万</span></div>
+                    <div class="gzh-reads"><span tooltip="周 / 月">阅读量：{{item.rW}} / {{item.rM}}</span></div>
                 </div>
+                <div class="gzh-right">
+                    <div class="gzh-price"><span>≈¥</span><span>{{item.price}}</span></div>
+                    <div class="btn-gzh">
+                        <button class="btn btn-default btn-sm" ng-click="selectGZH(item)">{{selectBtnTitle(item)}}
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class=clear></div>
+        </div>
+        <div class="enquiry-pages-bar" ng-show="totalCount>0">
+            <div ng-show="totalCount>COUNT_PER_PAGE">
+                <div pagination total-items="totalCount" ng-model="currentPage" ng-change="queryGZH()" max-size="50"
+                     class="pagination-sm" boundary-links="true"
+                     previous-text="上页" next-text="下页" items-per-page="COUNT_PER_PAGE"
+                     first-text="首页"
+                     last-text="末页"></div>
+                <b class="pages-info">公众号 {{totalCount}} 个，共 {{totalPages()}} 页</b>
+
+                <div class=clear></div>
+            </div>
+            <div class="condition on-bottom">
+                <label>价格范围：</label>
+                <select ng-model="priceRange" ng-change="priceRangeChange()">
+                    <option value="all">全部价格</option>
+                    <option value="500-1k">¥500 - ¥1000</option>
+                    <option value="1k-3k">¥1000 - ¥3000</option>
+                    <option value="3k-5k">¥3000 - ¥5000</option>
+                    <option value="5k-1w">¥5000 - ¥1w</option>
+                    <option value="1w-2w">¥1w - ¥2w</option>
+                    <option value="2w+">¥2w以上</option>
+                </select>
+                <span>&nbsp;&nbsp;</span>
+                <label>公众号类型：</label>
+                <label class="checkbox-inline">
+                    <input type="checkbox" ng-model="all_type" ng-change="all_type_change()"><b>全部</b>
+                </label>
+                <label class="checkbox-inline" ng-repeat="type in types">
+                    <input type="checkbox" ng-model="type.selected" ng-change="typesChange()"><span
+                        ng-bind="type.name"></span>
+                </label>
             </div>
         </div>
     </div>
     <div class="copy-right">
         Copyright © 2014-2015 德合睿创
     </div>
+</div>
 </body>
 </html>

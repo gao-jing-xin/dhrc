@@ -44,32 +44,31 @@ body {
 .step .arrow {
     border-style: solid;
     border-width: 20px 0 20px 20px;
-    border-color: transparent transparent transparent #bbdefb;
+    border-color: transparent transparent transparent #6ec8ff;
 }
 
 .step .arrow-start {
     border-style: solid;
     border-width: 20px 0 20px 20px;
-    border-color: #bbdefb #bbdefb #bbdefb transparent;
+    border-color: #6ec8ff #6ec8ff #6ec8ff transparent;
 }
 
 .step .text {
     padding: 0 10px;
-    color: #1565C0;
-    background: #bbdefb;
+    color: white;
+    background: #6ec8ff;
 }
 
 .step.selected .text {
-    color: #fff;
-    background: #2196F3;
+    background: #337AB7;
 }
 
 .step.selected .arrow {
-    border-color: transparent transparent transparent #2196F3;
+    border-color: transparent transparent transparent #337AB7;
 }
 
 .step.selected .arrow-start {
-    border-color: #2196F3 #2196F3 #2196F3 transparent;
+    border-color: #337AB7 #337AB7 #337AB7 transparent;
 }
 
 .clear {
@@ -97,7 +96,7 @@ body {
 }
 
 .gzh-item.selected {
-    border-color: #95deee;
+    border-color: #6ec8ff;
 }
 
 .gzh-icon {
@@ -128,7 +127,7 @@ body {
 }
 
 .gzh-title {
-    color: #176ed0;
+    color: #337AB7;
     margin-top: 2px;
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -219,7 +218,7 @@ img.logo {
 }
 
 .menu li.selected {
-    color: #0086B3;
+    color: #337AB7;
 }
 
 .menu a {
@@ -228,7 +227,7 @@ img.logo {
 }
 
 .menu a:hover {
-    color: #2687ba;
+    color: #337AB7;
 }
 
 .head-bar {
@@ -252,6 +251,7 @@ img.logo {
 .shopping-cart {
     font-size: 1.1em;
     float: right;
+    margin-top: 3px;
     margin-right: 8px;
     margin-left: 16px;
 
@@ -304,7 +304,7 @@ img.logo {
 }
 
 .xj-step2 .gzh-info {
-    width: 200px;
+    width: 300px;
 }
 
 .xj-step2 .gzh-right {
@@ -354,7 +354,7 @@ img.logo {
 }
 
 .gzh-date .badge:hover {
-    background-color: #286090;
+    background-color: #337AB7;
 }
 
 .resultH {
@@ -378,9 +378,35 @@ img.logo {
     margin-bottom: 6px;
 }
 
-.condition.on-top{
+.condition.on-top {
     border-bottom: 1px solid #f3f3f3;
 }
-.condition.on-bottom{
+
+.condition.on-bottom {
     border-top: 1px solid #f3f3f3;
+}
+
+.pages-info {
+    float: right;
+    margin: 10px 14px;
+    color: #337AB7;
+}
+
+.left-radius, .gzh-item, .step:first-child .text {
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+}
+
+.right-radius, .gzh-item, .step:last-child .text {
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+.modal-lg{
+    width: 400px
+}
+.login-hint{
+    padding-left: 50px;
+}
+.login-hint a{
+    cursor: pointer
 }

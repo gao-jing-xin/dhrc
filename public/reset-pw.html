@@ -7,6 +7,7 @@
     <title>德合睿创 - 找回密码</title>
     <link href="bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="css/my.css" rel="stylesheet">
+
     <script src="bower_components/angular/angular.min.js"></script>
     <script src="bower_components/angular-i18n/angular-locale_zh-cn.js"></script>
     <script src="bower_components/angular-cookies/angular-cookies.min.js"></script>
@@ -58,7 +59,7 @@
     <form class="col-lg-offset-2 col-lg-6" ng-disabled="serverCalling">
         <h2>找回密码</h2>
 
-        <div style="margin: 10px 0;">
+        <div class="steps" style="margin-left: 0;">
             <div class="step" ng-class="{'selected':step===1}">
                 <span class="text">1. 确认账号</span>
                 <span class="arrow"></span>
@@ -72,9 +73,8 @@
                 <span class="arrow-start"></span>
                 <span class="text">3. 重置密码</span>
             </div>
-            <div class="clear"></div>
         </div>
-
+        <div class="clear"></div>
         <div ng-show="step===1">
             <div my-input="userName" my-icon-class="glyphicon-user">用户名(电子邮箱)</div>
             <button class="btn btn-primary" ng-click="resetPW()">下一步</button>

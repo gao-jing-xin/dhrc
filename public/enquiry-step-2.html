@@ -21,21 +21,15 @@
 
     <script type="text/ng-template" id="tpl/select-date.html">
         <div class="modal-header">
-            请选择投放时间：<span ng-attr-tooltip="微信ID：{{item.code}}">{{item.title}}</span>
+            <span>{{item.title}}</span>（微信ID：{{item.code}}）
         </div>
         <div class="modal-body">
-            <div style="float:left;margin: 10px 30px">
-                投放开始时间
-                <div datepicker ng-model="item.dateStart" min-date="minDate" max-date="item.dateEnd" show-weeks="true"
-                     class="well well-sm"></div>
+            <div style="margin: 10px 13px">
+                <div datepicker ng-model="item.dateStart" min-date="minDate" max-date="maxDate" show-weeks="true"
+                     class="well well-md"></div>
             </div>
-            <div style="float:left;margin:10px 30px">
-                投放结束时间
-                <div datepicker ng-model="item.dateEnd" min-date="item.dateStart" show-weeks="true"
-                     class="well well-sm"></div>
-            </div>
-            <div style="float:left;padding:260px 0 20px 0">
-                <button class="btn btn-primary" ng-click="$close()">确 定</button>
+            <div style="padding-right: 12px">
+                <button class="btn btn-primary pull-right" ng-click="$close()">确 定</button>
             </div>
             <div class="clear"></div>
         </div>
@@ -83,8 +77,8 @@
                         <i class="glyphicon glyphicon-shopping-cart"></i>
                         <span class="badge" ng-bind="order.items.length"></span>
                         <span class="total-price"><span>≈¥</span><span ng-bind="order.totalPrice"></span></span>
-                        <a class="btn btn-default" href="enquiry.html">上一步</a>
-                        <a class="btn btn-primary" ng-click="commit()">提交询价请求</a>
+                        <a class="btn btn-default" href="enquiry.html" ng-disabled="!user.hasLogin()">上一步</a>
+                        <a class="btn btn-primary" ng-click="commit()" ng-disabled="!user.hasLogin()">提交询价请求</a>
                     </div>
                     <div class="clear"></div>
                 </div>
@@ -93,10 +87,12 @@
     </div>
     <div class="container" ng-show="errorMsg">
         <label class="label label-danger pull-right" style="margin-right:16px" ng-bind="errorMsg"></label>
-
         <div class="clear"></div>
     </div>
-    <div class="container xj-step2">
+    <div class="container login-hint" ng-show="!user.hasLogin()">
+        <h3>请先<a ng-click="user.showLoginDlg()">登录</a></h3>
+    </div>
+    <div class="container xj-step2" ng-show="user.hasLogin()">
         <div class="row xj-head">
             <form class="form-horizontal">
                 <div class="form-group" ng-class="{'has-error':artTitle.hasError()}">
@@ -131,9 +127,9 @@
                     <div class="gzh-type"><span class="badge">{{item.type}}</span></div>
                 </div>
                 <div class="gzh-info">
-                    <div class="gzh-title"><span ng-attr-tooltip="微信ID：{{item.code}}">{{item.title}}</span></div>
+                    <div class="gzh-title">{{item.title}}<small>（微信ID：{{item.code}}）</small></div>
                     <div class="gzh-fans">粉丝数：{{item.fans}}<span class="wan">万</span></div>
-                    <div class="gzh-reads"><span tooltip="周 / 月">阅读量：{{item.rW}} / {{item.rM}}</span></div>
+                    <div class="gzh-reads">阅读量：{{item.rW}}（近一周）/ {{item.rM}}（近一月）</div>
                 </div>
                 <div class="gzh-right">
                     <div class="gzh-price"><span>≈¥</span><span>{{item.price}}</span></div>
@@ -142,10 +138,10 @@
                     </div>
                 </div>
                 <div class="gzh-date">
-                    <span>投放自</span><span class="badge" ng-click="selectDate(item)">{{d2s(item.dateStart)}}</span>至<span
-                        class="badge" ng-click="selectDate(item)">{{d2s(item.dateEnd)}}</span>
+                    <span>投放时间</span><span class="badge" ng-click="selectDate(item)">{{d2s(item.dateStart)}}</span>
                 </div>
             </div>
+            <div class="clear"></div>
         </div>
     </div>
     <div class="copy-right">
