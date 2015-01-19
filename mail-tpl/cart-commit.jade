@@ -6,7 +6,7 @@ html
                 font-size: 20px;
             }
 
-            dt{
+            dt {
                 font-weight: bold;
                 color: #176ed0;
             }
@@ -14,14 +14,17 @@ html
             dd {
                 margin-left: 15px;
             }
+
             td {
                 border: 1px #ccc dotted;
                 font-size: 0.8em;
             }
-            thead td{
+
+            thead td, .total {
                 font-weight: bold;
                 font-size: 1em;
             }
+
 
     body
         p 尊敬的<b>#{userName}</b>您好：
@@ -37,14 +40,23 @@ html
                     thead
                         td(width='250px') 公众号
                         td(width='100px') 微信ID
-                        td(width='80px') 参考价格
                         td(width='150px') 投放时间
-                        td(width='150px') 结束时间
-                    each item in items
+                        td(width='80px') 参考单价
+                        td(width='150px') 投放天数
+                        td(width='80px') 参考价格
+                    each item in orderItems
                         tr
-                            td #{item.title}
+                            td
+                                a(href= getGZHUrl(item)) #{item.title}
                             td #{item.code}
-                            td ¥#{item.price}
                             td #{ftd(item.dateStart)}
-                            td #{ftd(item.dateEnd)}
-
+                            td ¥#{item.price}
+                            td #{item.days}
+                            td ¥#{item.days * item.price}
+                    tr(class='total')
+                        td 合计（#{orderItems.length}位）
+                        td
+                        td
+                        td
+                        td #{totalDays}
+                        td ¥#{totalPrice}

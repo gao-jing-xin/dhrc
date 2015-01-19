@@ -95,7 +95,7 @@ body {
     border: 1px solid #f3f3f3;
 }
 
-.gzh-item.selected {
+.gzh-item.selected, .selected .btn {
     border-color: #6ec8ff;
 }
 
@@ -114,10 +114,39 @@ body {
 }
 
 .gzh-type {
+    padding: 0 5px;
     position: absolute;
-    top: -6px;
-    left: -6px;
-    color: grey;
+    top: -4px;
+    left: -4px;
+    border-radius: 5px;
+}
+
+.gzh-type, .tf-date {
+    cursor: pointer;
+    color: #fff;
+    background-color: #337AB7;
+}
+.tf-days{
+    position: relative;
+}
+.tf-date {
+    padding: 5px 15px;
+    border-radius: 10px;
+}
+
+.gzh-type.warning, .tf-date.warning {
+    background-color: #d9534f;
+    border-color: #d43f3a;
+}
+
+.tf-date.warning:hover {
+    background-color: #c9302c;
+    border-color: #ac2925;
+}
+
+.tf-date:hover {
+    background-color: #286090;
+    border-color: #204d74;
 }
 
 .gzh-info {
@@ -236,7 +265,7 @@ img.logo {
 }
 
 .head-bar-content {
-    padding: 8px;
+    padding: 8px 0;
     top: 0;
 }
 
@@ -291,11 +320,13 @@ img.logo {
 }
 
 .xj-head {
-    margin-top: 15px;
+    margin: 10px 9px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 10px;
 }
 
 .xj-head textarea {
-    height: 150px;
+    height: 70px;
 }
 
 .xj-step2 .gzh-icon {
@@ -341,21 +372,13 @@ img.logo {
     margin-left: 17px;
 }
 
-.gzh-date {
+.tf-date-group {
     margin: 20px;
 }
-
-.gzh-date .badge {
-    cursor: pointer;
-    color: #fff;
-    background-color: #337ab7;
-    margin: 0 10px;
-    padding: 5px 15px;
+.tf-date-group *{
+    margin-right: 10px;
 }
 
-.gzh-date .badge:hover {
-    background-color: #337AB7;
-}
 
 .resultH {
     margin-top: 16px;
@@ -401,12 +424,39 @@ img.logo {
     border-top-right-radius: 5px;
     border-bottom-right-radius: 5px;
 }
-.modal-lg{
+
+.modal-lg {
     width: 400px
 }
-.login-hint{
+
+.login-hint {
     padding-left: 50px;
 }
-.login-hint a{
+
+.login-hint a {
     cursor: pointer
+}
+.wenan {
+    border-bottom: 1px solid #f3f3f3;
+    padding: 0 0 10px 0px;
+}
+.wenan *{
+    margin-right: 10px;
+}
+.danger{
+    color: #d43f3a;
+}
+.upload-file{
+    padding: 5px 10px;
+    margin-left: 5px;
+    margin-right: 5px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+.remove-file {
+    cursor: pointer;
+    margin: 5px 0 5px 5px;
+}
+.remove-file:hover{
+    font-weight: bold;
 }

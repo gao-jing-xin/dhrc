@@ -15,21 +15,26 @@
     <script src="bower_components/angular-cookies/angular-cookies.min.js"></script>
     <script src="bower_components/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
     <script src="bower_components/angular-bindonce/bindonce.min.js"></script>
+    <script>
+        FileAPI = {
+            //wrapInsideDiv: true, forceLoad: true, html5: false //to debug flash in HTML5 browsers
+        }
+    </script>
+    <script src="bower_components/ng-file-upload/angular-file-upload-all.min.js"></script>
     <script src="js/my-base.js"></script>
     <script src="js/my-user.js"></script>
     <script src="js/my-enguiry-step-2.js"></script>
 
-    <script type="text/ng-template" id="tpl/select-date.html">
+    <script type="text/ng-template" id="tpl/item-set-date.html">
         <div class="modal-header">
             <span>{{item.title}}</span>（微信ID：{{item.code}}）
+            <button type="button" class="close" ng-click="$dismiss()">&times;</button>
         </div>
         <div class="modal-body">
             <div style="margin: 10px 13px">
-                <div datepicker ng-model="item.dateStart" min-date="minDate" max-date="maxDate" show-weeks="true"
-                     class="well well-md"></div>
-            </div>
-            <div style="padding-right: 12px">
-                <button class="btn btn-primary pull-right" ng-click="$close()">确 定</button>
+                设置投放时间：
+                <div datepicker ng-model="dateStart" min-date="minDate" max-date="maxDate" show-weeks="true"
+                     class="well well-md" ng-change="okClick()"></div>
             </div>
             <div class="clear"></div>
         </div>
@@ -57,17 +62,14 @@
                 <div class="head-bar-content">
                     <div class="steps">
                         <div class="step">
-                            <span class="text">1. 选择公众号</span>
-                            <span class="arrow"></span>
+                            <span class="text">1. 选择公众号</span><span class="arrow"></span>
                         </div>
                         <div class="step selected">
-                            <span class="arrow-start"></span>
-                            <span class="text">2. 完善信息</span>
-                            <span class="arrow"></span>
+                            <span class="arrow-start"></span><span class="text">2. 完善信息</span><span
+                                class="arrow"></span>
                         </div>
                         <div class="step">
-                            <span class="arrow-start"></span>
-                            <span class="text">3. 提交询价</span>
+                            <span class="arrow-start"></span><span class="text">3. 提交询价</span>
                         </div>
                     </div>
 
@@ -75,70 +77,86 @@
 
                         <div my-user-label></div>
                         <i class="glyphicon glyphicon-shopping-cart"></i>
-                        <span class="badge" ng-bind="order.items.length"></span>
-                        <span class="total-price"><span>≈¥</span><span ng-bind="order.totalPrice"></span></span>
+                        <span class="badge" ng-bind="orderItems.length"></span>
+                        <span class="total-price"><span>≈¥</span><span ng-bind="totalPrice"></span></span>
                         <a class="btn btn-default" href="enquiry.html" ng-disabled="!user.hasLogin()">上一步</a>
-                        <a class="btn btn-primary" ng-click="commit()" ng-disabled="!user.hasLogin()">提交询价请求</a>
+                        <a class="btn btn-primary" ng-click="commit()"
+                           ng-disabled="!commitEnabled()">提交询价请求</a>
                     </div>
                     <div class="clear"></div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="container" ng-show="errorMsg">
-        <label class="label label-danger pull-right" style="margin-right:16px" ng-bind="errorMsg"></label>
-        <div class="clear"></div>
-    </div>
     <div class="container login-hint" ng-show="!user.hasLogin()">
         <h3>请先<a ng-click="user.showLoginDlg()">登录</a></h3>
     </div>
     <div class="container xj-step2" ng-show="user.hasLogin()">
-        <div class="row xj-head">
-            <form class="form-horizontal">
-                <div class="form-group" ng-class="{'has-error':artTitle.hasError()}">
-                    <label class="control-label col-lg-1">标题</label>
+        <form class="form xj-head">
+            <div>
+                这里放些说明性文字，提示用户填写那些内容，以及上传附件等
+            </div>
+            <br>
 
-                    <div class="col-lg-7">
-                        <input type="text" class="form-control" ng-model="artTitle.value"
-                               ng-change="artTitle.onChanged()">
-                    </div>
-                    <label class="control-label small col-lg-4" style="text-align: left" ng-show="artTitle.hasError()">
-                        &nbsp;<span class="glyphicon glyphicon-remove-circle"></span>&nbsp;{{artTitle.msg}}
-                    </label>
+            <div class="form-group" ng-class="{'has-error':artTitle.hasError()}">
+                <div>品牌 / 产品 *&nbsp;
+                    <small class="danger" ng-show="artTitle.hasError()">{{artTitle.msg}}</small>
                 </div>
-                <div class="form-group" ng-class="{'has-error':artSubject.hasError()}">
-                    <label class="control-label col-lg-1">摘要</label>
-
-                    <div class="col-lg-7">
-                        <textarea class="form-control" ng-model="artSubject.value"></textarea>
-                    </div>
-                    <label class="control-label small col-lg-4" style="text-align: left"
-                           ng-show="artSubject.hasError()">
-                        &nbsp;<span class="glyphicon glyphicon-remove-circle"></span>&nbsp;{{artSubject.msg}}
-                    </label>
-                </div>
-            </form>
-        </div>
+                <input type="text" class="form-control" ng-model="artTitle.value"
+                       ng-change="artTitle.onChanged()"/>
+            </div>
+            <div class="form-group" ng-class="{'has-error':artSubject.hasError()}">
+                <div>文案方向</div>
+                <textarea class="form-control" ng-model="artSubject.value"
+                          ng-change="artSubject.onChanged()"></textarea>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-primary" ng-file-select ng-file-change="uploadFile($files)" accept="*.*">
+                    图片 / 文档上传
+                </button>
+                <span class="upload-file" ng-repeat="up in upFiles">{{up.title()}}<span class="remove-file"
+                                                                                        ng-click="up.delUpload()">&times;</span></span>
+            </div>
+        </form>
         <div>
-            <div class="gzh-item" ng-repeat="item in order.items">
+            <div class="gzh-item" ng-repeat="item in orderItems" id="item-{{item.id}}">
                 <div class="gzh-icon">
-                    <img ng-src="./logos/{{item.logo}}">
+                    <a ng-href="{{item | gzhUrl}}" href="#" target="_blank"><img ng-src="{{item | gzhLogoUrl}}"></a>
 
-                    <div class="gzh-type"><span class="badge">{{item.type}}</span></div>
+                    <div class="gzh-type" ng-class="{warning:item.notFA}" tooltip="{{item | gzhWarning}}">
+                        {{item.type}}
+                    </div>
                 </div>
                 <div class="gzh-info">
-                    <div class="gzh-title">{{item.title}}<small>（微信ID：{{item.code}}）</small></div>
+                    <div class="gzh-title">{{item.title}}
+                        <small>（微信ID：{{item.code}}）</small>
+                    </div>
                     <div class="gzh-fans">粉丝数：{{item.fans}}<span class="wan">万</span></div>
-                    <div class="gzh-reads">阅读量：{{item.rW}}（近一周）/ {{item.rM}}（近一月）</div>
+                    <div class="gzh-reads">阅读量：{{item.rW}}/ {{item.rM}}</div>
                 </div>
                 <div class="gzh-right">
-                    <div class="gzh-price"><span>≈¥</span><span>{{item.price}}</span></div>
+                    <div class="gzh-price"><span>≈¥</span><span>{{item.price*item.days}}</span></div>
                     <div class="btn-gzh">
                         <button class="btn btn-default btn-sm" ng-click="delItem(item)">删除</button>
                     </div>
                 </div>
-                <div class="gzh-date">
-                    <span>投放时间</span><span class="badge" ng-click="selectDate(item)">{{d2s(item.dateStart)}}</span>
+                <div class="tf-date-group">
+                    <span>投放时间：</span>
+                    <span class="tf-date"
+                          ng-class="{'warning': !item.dateStart}"
+                          ng-click="itemSetDate(item)"
+                          ng-bind="item | tfDate"></span>
+                    <span>x</span>
+                    <span dropdown class="dropdown">
+                        <span class="dropdown-toggle" dropdown-toggle>
+                            <span class="tf-date" ng-bind="item.days + ' 天'"></span>
+                        </span>
+                        <ul class="dropdown-menu" style="min-width:40px">
+                            <li ng-repeat="choice in selectDays">
+                                <a href ng-click="itemSetDays(item,choice)">{{choice}} 天</a>
+                            </li>
+                        </ul>
+                    </span>
                 </div>
             </div>
             <div class="clear"></div>

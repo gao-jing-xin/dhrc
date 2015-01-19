@@ -31,12 +31,12 @@
                 var self = this;
                 if (!self.hasLogin() && $cookies.sessionID) {//尝试自动登录
                     self.state = "tryAutoLogin";
-                    serverCall("userAutoLogin", {}, function (result) {
-                        if (result.success) {
-                            self.setLoginInfo(result.success);
-                        } else {
+                    serverCall("userAutoLogin", {}, function (response) {
+                        if (response.errors) {
                             delete $cookies.sessionID;
                             self.state = "";
+                        } else if (response.loginInfo) {
+                            self.setLoginInfo(response.loginInfo);
                         }
                     }, function () {//finally
                         if (self.state === "tryAutoLogin") {
@@ -56,30 +56,30 @@
             notLogin: function () {
                 return !this.state;
             },
-            logout: function (caller, callBack) {
+            logout: function (callBack) {
                 var self = this;
-                serverCall("userLogout", {}, function (result) {
+                serverCall("userLogout", {}, function (response) {
                     delete self.userName;
                     delete $cookies.sessionID;
                     self.state = "";
                     self.broadcastUserChanged();
                     if (callBack) {
-                        callBack.call(caller, result);
+                        callBack(response);
                     }
                 });
             },
             showInfoDlg: function () {
                 if (this.hasLogin()) {
-                    serverCall("userGetInfo", {}, function (result) {
-                        var userInfo;
-                        if ((userInfo = result.success) && userInfo.company) {
+                    serverCall("userGetInfo", {}, function (response) {
+                        var r;
+                        if (r = response.userInfo) {
                             $modal.open({
                                 templateUrl: 'tpl/user-info.html',
                                 controller: 'UserInfoController',
                                 scope: $scope,
                                 resolve: {
                                     userInfo: function () {
-                                        return userInfo;
+                                        return r;
                                     }
                                 }
                             });
@@ -205,12 +205,12 @@
                 userName: self.userName.value,
                 password: self.password.value,
                 autoLogin: self.autoLogin.value
-            }, function (result) {
-                if (result.success) {
-                    $scope.user.setLoginInfo(result.success);
+            }, function (response) {
+                if (response.errors){
+                    Input.assignErrors(self, response.errors);
+                }else if (response.loginInfo){
+                    $scope.user.setLoginInfo(response.loginInfo);
                     $scope.$close();
-                } else {
-                    Input.assignErrors(self, result.errors);
                 }
             });
         };
@@ -224,7 +224,7 @@
         userInput.newPhoneNo($scope, userInfo.phoneNo);
         userInput.newQQ($scope, userInfo.qq);
         $scope.logout = function () {
-            $scope.user.logout(this, function () {
+            $scope.user.logout(function () {
                 $scope.$close();
             });
         };
@@ -242,9 +242,9 @@
             serverCall("userChangePW", {
                 oldPW: $scope.oldPW.value,
                 password: $scope.password.value
-            }, function (result) {
-                Input.assignResult($scope, result);
-                if (result.success) {
+            }, function (response) {
+                Input.assignResult($scope, response);
+                if (response.success) {
                     $scope.edit();
                 }
             });
@@ -269,9 +269,9 @@
                 sex: $scope.sex.value,
                 phoneNo: $scope.phoneNo.value,
                 qq: $scope.qq.value
-            }, function (result) {
-                Input.assignResult($scope, result);
-                if (result.success) {
+            }, function (response) {
+                Input.assignResult($scope, response);
+                if (response.success) {
                     $scope.edit();
                 }
             });

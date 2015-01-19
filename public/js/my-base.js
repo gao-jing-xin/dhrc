@@ -1,15 +1,34 @@
 (function (angular) {
     var m = angular.module("myBase", ["pasvaz.bindonce"]);
+    m.filter("gzhWarning", function () {
+        return function (item) {
+            return item.notFA ? '头条审核严格' : '';
+        }
+    });
+    m.filter("gzhLogoUrl", function () {
+        return function (item) {
+            if (item.hasLogo) {
+                return './logos/' + item.code + '.jpg';
+            } else {
+                return './logos/_default_.jpg';
+            }
+        }
+    });
     m.filter("or", function () {
         return function (input, or) {
             return input || or;
         }
     });
-    m.filter("ifElse", function () {
-        return function (input, whenTrue, whenFalse) {
-            return input ? whenTrue : whenFalse;
+    m.filter("gzhUrl", function () {
+        return function (item) {
+            if (item.openID) {
+                return encodeURI('http://weixin.sogou.com/gzh?openid=' + item.openID);
+            } else {
+                return encodeURI('http://weixin.sogou.com/weixin?type=1&query=' + item.title);
+            }
         }
     });
+
     m.factory("Input", [function () {
         function Input(initValue, validator) {
             this.value = this.oldValue = initValue;
@@ -223,7 +242,7 @@
                 cancelTitle: "@"
             },
             template: '<div bindonce class="pull-right">\
-                    <button class="btn btn-primary" ng-click="onOk()" bo-bind="okTitle | or:\'确 定\'"></button>\
+                    <button class="btn btn-primary" ng-click="onOk()" bo-bind="okTitle | or:\'确定\'"></button>\
                     <button class="btn btn-default" ng-click="onCancel()" bo-bind="cancelTitle | or:\'取消\'"></button>\
                 </div>'
         };

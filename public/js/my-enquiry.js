@@ -1,5 +1,11 @@
 (function (angular) {
     var m = angular.module("myEnquiry", ["myBase", "myUser"]);
+    m.filter("gzhBtnTitle", function () {
+        return function (item) {
+            return item.isSelected ? '取消选择' : '选择';
+        }
+    });
+
     m.controller("EnquiryController", ["$scope", "userInput", "serverCall", "$modal", "$window", function ($scope, userInput, serverCall, $modal, $window) {
 
         var PR = {
@@ -15,11 +21,15 @@
         var orderID, orderVersion, cartItems;
 
         function setCartItems(cItems) {
-            cartItems = cItems;
-            $scope.totalPrice = cItems.totalPrice;
-            $scope.cartItemCount = cItems.count;
-            delete cItems.totalPrice;
-            delete cItems.count;
+            var cartItemCount = 0, totalPrice = 0;
+            cartItems = {};
+            cItems.forEach(function (item) {
+                cartItems[item.gzhID] = item.days;
+                totalPrice += item.days * item.price;
+                cartItemCount++;
+            });
+            $scope.totalPrice = totalPrice;
+            $scope.cartItemCount = cartItemCount;
         }
 
         function setTypes(types) {
@@ -44,38 +54,46 @@
             orderVersion = undefined;
         }
 
+        function orderSync(response) {
+            if (response.order) {
+                orderID = response.order.id;
+                orderVersion = response.order.version;
+            }
+            if (response.orderItems) {
+                setCartItems(response.orderItems);
+            }
+            if (response.types) {
+                setTypes(response.types);
+            }
+        }
+
         $scope.selectGZH = function (item) {
             $scope.errorMsg = undefined;
-
-            var selectedID = item.isSelected ? -item.id : item.id;
-
-            serverCall('cartGZHSelect', {
+            serverCall('cartItemUpdate', {
                 orderID: orderID,
                 orderVersion: orderVersion,
-                selectedID: selectedID
-            }, function (result) {
-                var s;
-                if (s = result.success) {
-                    if (s.cartItems) {
-                        setCartItems(s.cartItems);
-                    } else if (item.isSelected = (selectedID > 0)) {
-                        cartItems[selectedID] = item.price;
-                        $scope.totalPrice += item.price;
-                        $scope.cartItemCount++;
-                    } else {
-                        delete cartItems[selectedID];
-                        $scope.totalPrice -= item.price;
+                gzhID: item.id,
+                days: item.isSelected ? 0 : 1
+            }, function (response) {
+                if (response.errors) {
+                    $window.alert(result.errors.error);
+                } else {
+                    orderSync(response);
+                    if (response.deleted) {
+                        $scope.totalPrice -= item.price * cartItems[item.id];
                         $scope.cartItemCount--;
+                        orderVersion = response.deleted.orderVersion;
+                        delete cartItems[item.id];
+                        item.isSelected = false;
+                    } else if (response.updated) {
+                        cartItems[item.id] = response.updated.days;
+                        $scope.totalPrice += item.price * response.updated.days;
+                        $scope.cartItemCount++;
+                        orderVersion = response.updated.orderVersion;
+                        item.isSelected = true;
                     }
-                    orderVersion = s.orderVersion;
                 }
             });
-        };
-        $scope.getLogoUrl = function (item) {
-            return './logos/' + item.code + '.jpeg';
-        };
-        $scope.selectBtnTitle = function (item) {
-            return item.isSelected ? '取消选择' : '选择';
         };
         var COUNT_PER_PAGE = $scope.COUNT_PER_PAGE = 48;
         $scope.all_type_change = function () {
@@ -116,35 +134,24 @@
                 priceMin: pr.priceMin,
                 priceMax: pr.priceMax,
                 queryTypes: $scope.types
-            }, function (result) {
+            }, function (response) {
                 if (qid != $scope.queryGZH.queryId) {
                     return;
                 }
-                var s;
-                if (s = result.success) {
-                    if (s.cartItems) {
-                        orderID = s.orderID;
-                        orderVersion = s.orderVersion;
-                        setCartItems(s.cartItems);
-                    }
-                    $scope.totalCount = s.totalCount;
-                    $scope.gzhs = s.rows;
-                    if (s.types && s.types.length) {
-                        setTypes(s.types);
-                    }
-                    angular.forEach($scope.gzhs, function (item) {
-                        if (cartItems[item.id] !== undefined) {
-                            item.isSelected = true;
-                        }
-                        if (item.hasLogo) {
-                            item.logo = item.code + '.jpg';
-                        } else {
-                            item.logo = '_default_.jpg';
-                        }
-                    });
-                } else {
+                if (response.errors) {
                     $scope.errorMsg = result.errors.error;
                     $scope.gzhs = [];
+                } else {
+                    orderSync(response);
+                    if (response.gzhs) {
+                        $scope.gzhs = response.gzhs;
+                        $scope.totalCount = response.totalCount;
+                        angular.forEach($scope.gzhs, function (item) {
+                            if (cartItems[item.id] !== undefined) {
+                                item.isSelected = true;
+                            }
+                        });
+                    }
                 }
             });
         };
@@ -169,8 +176,11 @@
             }
             $scope.goUrl('enquiry-step-2.html');
         };
-        $scope.totalPages = function(){
-            return Math.floor(($scope.totalCount + COUNT_PER_PAGE-1) / COUNT_PER_PAGE)
+        $scope.nextEnabled = function(){
+            return $scope.user.hasLogin() && $scope.cartItemCount
+        };
+        $scope.totalPages = function () {
+            return Math.floor(($scope.totalCount + COUNT_PER_PAGE - 1) / COUNT_PER_PAGE)
         }
     }]);
 

@@ -60,7 +60,7 @@
                         <i class="glyphicon glyphicon-shopping-cart"></i>
                         <span class="badge" ng-bind="cartItemCount"></span>
                         <span class="total-price"><span>≈¥</span><span ng-bind="totalPrice"></span></span>
-                        <a class="btn btn-primary" href="#" ng-click="nextStep()" ng-disabled="!user.hasLogin()">下一步</a>
+                        <a class="btn btn-primary" href="#" ng-click="nextStep()" ng-disabled="!nextEnabled()">下一步</a>
                     </div>
                     <div class="clear"></div>
                 </div>
@@ -113,9 +113,11 @@
         <div>
             <div class="gzh-item" ng-class="{'selected':item.isSelected}" ng-repeat="item in gzhs">
                 <div class="gzh-icon">
-                    <img ng-src="./logos/{{item.logo}}">
+                    <a ng-href="{{item | gzhUrl}}" href="#" target="_blank"><img ng-src="{{item | gzhLogoUrl}}"></a>
 
-                    <div class="gzh-type"><span class="badge">{{item.type}}</span></div>
+                    <div class="gzh-type" ng-class="{warning:item.notFA}" tooltip="{{item | gzhWarning}}">
+                        {{item.type}}
+                    </div>
                 </div>
                 <div class="gzh-info">
                     <div class="gzh-title"><span ng-attr-tooltip="微信ID：{{item.code}}">{{item.title}}</span></div>
@@ -125,10 +127,12 @@
                 <div class="gzh-right">
                     <div class="gzh-price"><span>≈¥</span><span>{{item.price}}</span></div>
                     <div class="btn-gzh">
-                        <button class="btn btn-default btn-sm" ng-click="selectGZH(item)">{{selectBtnTitle(item)}}
-                        </button>
+                        <button class="btn btn-default btn-sm" ng-click="selectGZH(item)"
+                                ng-bind="item | gzhBtnTitle"></button>
                     </div>
                 </div>
+                <div class=clear></div>
+                <div></div>
             </div>
             <div class=clear></div>
         </div>

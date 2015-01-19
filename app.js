@@ -12,9 +12,10 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-var multer = require('multer');
+var multiparty = require('multiparty');
 var jade = require('jade');
 var crypto = require('crypto');
+var iconv = require('iconv-lite');
 
 var mysqlPool = mysql.createPool({
     connectionLimit: 10,
@@ -25,42 +26,75 @@ var mysqlPool = mysql.createPool({
     multipleStatements: true
 });
 
-mysqlPool.callSP = function (spName, params, res, next, then) {
+mysqlPool.callSP = function (spName, params, res, next, then, cleanUp) {
     this.query("call " + spName, params, function (err, returns) {
         if (err) {
+            if (cleanUp) {
+                cleanUp();
+            }
             next(err);
             return;
         }
         if (returns.length === 0) {
+            if (cleanUp) {
+                cleanUp();
+            }
             next(new Error("db error!"));
             return;
         }
-        var firstRows = returns[0], r;
-        if (!(firstRows instanceof Array)) {
-            if (then) {
-                then(undefined, undefined, returns);
-            } else {
-                res.json({success: {}});
+        var response = {}, i = 0, l = returns.length, rows;
+        while (i < l) {
+            rows = returns[i];
+            if (rows instanceof Array) {
+                if (rows.length == 1) {
+                    var row = rows[0];
+                    if (row._type_ === 'array') {
+                        response[row._field_] = returns[++i];
+                    } else {
+                        response[row._field_] = row;
+                        delete row._type_;
+                        delete row._field_;
+                    }
+                } else {
+                    //error!
+                }
             }
-            return;
+            i++;
         }
-        r = firstRows[0];
-        if (r && r.error) {
-            if (then) {
-                then(r, undefined, returns)
-            } else {
-                res.json({errors: r});
+        if (then && !response.errors) {
+            then(response);
+            if (cleanUp) {
+                cleanUp();
             }
-        } else if (then) {
-            then(undefined, firstRows, returns)
         } else {
-            res.json({success: params.$acceptArray ? firstRows : (r || {})});
+            if (cleanUp) {
+                cleanUp();
+            }
+            res.json(response);
         }
     });
 };
 
+mysqlPool.callSql = function (next, sql, params, then) {
+    var callback = function (err, returns) {
+        if (err) {
+            next(err);
+        } else {
+            then(returns);
+        }
+    };
+    if (typeof params === 'function') {
+        then = params;
+        params = callback;
+        callback = undefined;
+    }
+    this.query(sql, params, callback);
+};
+
 var __mailFrom = 'gao_jing_xin@126.com';
 __mailFromTitle = "德合睿创<" + __mailFrom + ">";
+__mailTeller = __mailFrom;
+
 var mailTransport = nodemailer.createTransport(smtpPool({
     host: 'smtp.126.com',
     port: 25,
@@ -82,15 +116,25 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(multer({
-    dest: path.join(__dirname, '/uploads/'),
-    rename: function (fieldname, filename) {
-        return crypto.randomBytes(16).toString('hex');
-    }
-}));
-
+/*
+ app.use(multer({
+ dest: path.join(__dirname, '/uploads/'),
+ rename: function (fieldname, filename) {
+ return crypto.randomBytes(16).toString('hex');
+ },
+ onFileUploadStart: function (file) {
+ file.name;
+ },
+ onFileUploadData: function (file, data) {
+ file.name;
+ },
+ onFileUploadComplete: function (file) {
+ file.name;
+ }
+ }));
+ */
 function extractParams(req) {
-    var params = req.body;
+    var params = req.body || {};
     if (!params.sessionID) {
         params.sessionID = req.cookies.sessionID || 'x';
     }
@@ -103,148 +147,105 @@ app.post('/api/userAutoLogin', function (req, res, next) {
 
 app.post('/api/userLogin', function (req, res, next) {
     var params = extractParams(req);
-    mysqlPool.callSP('user_login(?,?,?)', [params.userName, params.password, params.autoLogin], res, next, function (err, rows) {
-        if (err) {
-            res.json({errors: err});
-            return;
-        }
-        var r = rows[0];
-        res.cookie('sessionID', r.sessionID, params.autoLogin && {
-            maxAge: (365 * 24 * 60 * 60 * 1000)
-        });
-        res.json({success: r});
-    });
-});
-
-app.post('/api/cartGZHSelect', function (req, res, next) {
-    var params = extractParams(req);
-    mysqlPool.callSP('cart_gzh_select(?,?,?,?)', [params.sessionID, params.orderID, params.orderVersion, params.selectedID], res, next, function (err, rows, results) {
-        if (err) {
-            res.json({errors: err});
-            return;
-        }
-        var r = rows[0], cartItems = results[1];
-        if (cartItems instanceof Array) {
-            r.cartItems = cartItems.map(function (item) {
-                return item.gzhID;
+    mysqlPool.callSP('user_login(?,?,?)', [params.userName, params.password, params.autoLogin], res, next, function (response) {
+        if (response.loginInfo) {
+            res.cookie('sessionID', response.loginInfo.sessionID, {
+                maxAge: (365 * 24 * 60 * 60 * 1000)
             });
         }
-        res.json({success: r});
+        res.json(response);
     });
 });
+
+app.post('/api/userLogout', function (req, res, next) {
+    mysqlPool.callSP('user_logout(?)', extractParams(req).sessionID, res, next);
+});
+
 
 app.post('/api/cartGet', function (req, res, next) {
-    var params = extractParams(req);
-    mysqlPool.callSP('cart_get(?)', [params.sessionID], res, next, function (err, rows, results) {
-        if (err) {
-            res.json({errors: err});
-            return;
-        }
-        var order = rows[0];
-        order.items = results[1];
-        res.json({success: order});
-    });
+    mysqlPool.callSP('cart_get(?)', extractParams(req).sessionID, res, next);
 });
 
-app.post('/api/cartGZHRemove', function (req, res, next) {
+app.post('/api/cartItemUpdate', function (req, res, next) {
     var params = extractParams(req);
-    mysqlPool.callSP('cart_gzh_remove(?,?,?,?)', [params.sessionID, params.orderID, params.orderVersion, params.gzhID], res, next, function (err, rows, results) {
-        if (err) {
-            res.json({errors: err});
-            return;
+    if (params.dateStart) {
+        try {
+            params.dateStart = new Date(params.dateStart);
+        } catch (e) {
+            params.dateStart = null;
         }
-        var r = rows[0], items = results[1];
-        if (items instanceof Array) {
-            r.items = items;
-        }
-        res.json({success: r});
-    });
+    }
+    mysqlPool.callSP('cart_item_update(?,?,?,?,?,?)', [
+        params.sessionID,
+        params.orderID,
+        params.orderVersion,
+        params.gzhID,
+        params.dateStart,
+        params.days
+    ], res, next);
 });
 
-function sendCommitMail(params, res, next) {
-    mysqlPool.query("select g.title,g.code,g.price,i.dateStart,i.dateEnd\
-    from biz_gzh g join biz_order_item i on i.gzhID = g.id\
-    where i.orderID=?", params.orderID, function (err, results) {
-        if (err) {
-            next(err);
-            return;
-        }
-        params.ftd = function (d) {
-            return d.getFullYear() + ' 年 ' + (d.getMonth() + 1) + ' 月 ' + d.getDate() + ' 日';
-        };
-        params.items = results;
-        mailTransport.sendMail({
-            from: __mailFromTitle,
-            to: params.userName,
-            subject: "德合睿创 - 询价信息备查",
-            html: jade.renderFile(path.join(__dirname, '/mail-tpl/cart-commit.jade'), params)
-        }, function (err, info) {
-            if (err) {
-                console.log(err);
-            }
-            //??
-        });
-        res.json({success: {}});
-    });
-}
 app.post('/api/cartCommit', function (req, res, next) {
     var params = extractParams(req);
     mysqlPool.callSP('cart_commit(?,?,?,?,?)', [
         params.sessionID, params.orderID, params.orderVersion, params.artTitle, params.artSubject
-    ], res, next, function (err, rows, results) {
-        if (err) {
-            res.json({errors: err});
-            return;
+    ], res, next, function (response) {
+        if (response.commited) {
+            var commited = response.commited;
+            var files = response.files || [];
+            commited.orderItems = response.orderItems || [];
+            response.commited = {
+                orderVersion: commited.orderVersion
+            };
+            delete response.orderItems;
+            delete response.files;
+            commited.ftd = function (d) {
+                return d.getFullYear() + ' 年 ' + (d.getMonth() + 1) + ' 月 ' + d.getDate() + ' 日';
+            };
+            commited.getGZHUrl = function (gzh) {
+                if (gzh.openID) {
+                    return encodeURI('http://weixin.sogou.com/gzh?openid=' + gzh.openID);
+                } else {
+                    return encodeURI('http://weixin.sogou.com/weixin?type=1&query=' + gzh.title);
+                }
+            };
+            files.forEach(function (f) {
+                f.filename = f.fileName;
+                f.path = filePathOfOrder(commited.orderID, f.fileName);
+                delete f.fileName;
+                delete f.size;
+            });
+
+            commited.totalPrice = 0;
+            commited.totalDays = 0;
+            commited.orderItems.forEach(function (item) {
+                commited.totalDays += item.days;
+                commited.totalPrice += item.days * item.price;
+            });
+
+            mailTransport.sendMail({
+                from: __mailFromTitle,
+                to: commited.userName,
+                bcc: __mailTeller,
+                subject: "德合睿创 - 询价信息备查",
+                html: jade.renderFile(path.join(__dirname, '/mail-tpl/cart-commit.jade'), commited),
+                attachments: files
+            }, function (err, info) {
+                if (err) {
+                    console.log(err);
+                }
+                //??
+            });
         }
-        params.userName = rows[0].userName;
-        var sql = ['insert into biz_order_item(orderID,gzhID,dateStart,dateEnd)values'];
-        params.items.forEach(function (item, index) {
-            if (index) {
-                sql.push("\r\n,");
-            }
-            sql.push(mysql.format('(?,?,?,?)', [params.orderID, item.id, new Date(item.dateStart), new Date(item.dateEnd)]));
-        });
-        delete params.items;
-        sql.push('on duplicate key update dateStart = values(dateStart),dateEnd=values(dateEnd)\r\n');
-        mysqlPool.query(sql.join(''), function (err) {
-            if (err) {
-                next(err);
-                return;
-            }
-            sendCommitMail(params, res, next);
-        });
+        res.json(response);
     });
 });
+
 
 app.post('/api/gzhQuery', function (req, res, next) {
     var params = extractParams(req);
     var hasTypes = params.queryTypes && params.queryTypes.length > 0;
-    mysqlPool.callSP('gzh_query_before(?,?,?,?)', [params.sessionID, params.orderID, params.orderVersion, !hasTypes], res, next, function (err, rows, results) {
-        if (err) {
-            res.json({errors: err});
-            return;
-        }
-        var r = rows[0], ids = results[1], types;
-        if (r.orderVersion && ids instanceof Array && ids.length > 0 && ids[0].gzhID) {
-            var cItems = r.cartItems = {
-                count: 0,
-                totalPrice: 0
-            };
-            ids.forEach(function (row) {
-                var p = row.price;
-                cItems[row.gzhID] = p;
-                cItems.totalPrice += p;
-                cItems.count++;
-            });
-            types = results[2];
-            if (types instanceof Array && types.length > 0) {
-                r.types = types;
-            }
-        }
-        if (ids instanceof Array && ids.length > 0 && ids[0].name) {
-            r.types = types;
-        }
-
+    mysqlPool.callSP('gzh_query_before(?,?,?,?)', [params.sessionID, params.orderID, params.orderVersion, !hasTypes], res, next, function (response) {
         function buildWhere() {
             var where = [];
             if (params.priceMin) {
@@ -272,23 +273,13 @@ app.post('/api/gzhQuery', function (req, res, next) {
                 return '';
             }
         }
-        var where = buildWhere();
-        mysqlPool.query('select count(*) totalCount from biz_gzh' + where,function(err,returns){
-            if (err) {
-                next(err);
-                return;
-            }
-            r.totalCount = returns[0].totalCount;
-            mysqlPool.query('select id,code,title,type,fans / 10000 fans,rW,rM,price,notFA from biz_gzh ' + where
-            + ' order by fans,id limit ?,?', [params.offset, params.count], function (err, returns) {
-                if (err) {
-                    next(err);
-                    return;
-                }
-                r.rows = returns;
-                res.json({success: r});
 
-            });
+        mysqlPool.callSql(next, 'select SQL_CALC_FOUND_ROWS id,code,title,type,fans / 10000 fans,rW,rM,price,notFA,hasLogo,openID from biz_gzh ' + buildWhere()
+        + ' order by fans,id limit ?,?;select FOUND_ROWS() totalCount;', [params.offset, params.count], function (results) {
+            response.gzhs = results[0];
+            response.totalCount = results[1][0].totalCount;
+            res.json(response);
+
         });
     });
 });
@@ -355,7 +346,7 @@ function importGZH(files, index, callback) {
         return;
     }
     var importer = {
-        dayRStart: 7,
+        dayRStart: 9,
         parseDays: function (r) {
             var start = this.dayRStart, i = 0, cMonth, cYear, m, d, dayStr, dayNum, days;
             while (i < start) {
@@ -389,6 +380,13 @@ function importGZH(files, index, callback) {
     };
 
     function DBImporter() {
+        var logos = this.logos = {};
+        try {
+            fs.readdirSync(path.join(__dirname, '/public/logos')).forEach(function (file) {
+                logos[file] = true;
+            });
+        } catch (e) {
+        }
         stream.Writable.call(this, {
             objectMode: true
         });
@@ -405,6 +403,19 @@ function importGZH(files, index, callback) {
     }
 
     util.inherits(DBImporter, stream.Writable);
+    DBImporter.prototype.hasLogo = function (code) {
+        return this.logos[code + '.jpg'];
+    };
+    function decodeFID(__biz) {
+        if (!__biz) {
+            return null;
+        }
+        try {
+            return new Buffer(__biz, 'base64').toString();
+        } catch (e) {
+            return null;
+        }
+    }
 
     DBImporter.prototype._write = function (record, encoding, callback) {
         if (importer.days) {
@@ -412,13 +423,17 @@ function importGZH(files, index, callback) {
                 callback();
                 return;
             }
-            mysqlPool.query('call gzh_import(?,?,?,?,?*10000,?)', [
+            var gzhCode = toSqlValue(record[3], 'sl');
+            mysqlPool.query('call gzh_import(?,?,?,?,?*10000,?,?,?,?)', [
                 toSqlValue(record[1], 'b'),
                 toSqlValue(record[2], 's'),
-                toSqlValue(record[3], 'sl'),
+                gzhCode,
                 toSqlValue(record[4], 's'),
                 toSqlValue(record[5], 'n'),
-                toSqlValue(record[6], 'n')
+                toSqlValue(record[6], 'n'),
+                toSqlValue(record[7], 's'),
+                decodeFID(toSqlValue(record[8], 's')),
+                this.hasLogo(gzhCode)
             ], function (err, results) {
                 if (err) {
                     callback(err);
@@ -460,7 +475,8 @@ function importGZH(files, index, callback) {
         }
     };
 
-    fs.createReadStream(fn, {encoding: 'utf8'})
+    fs.createReadStream(fn)
+        .pipe(iconv.decodeStream('gbk'))
         .pipe(csv.parse({delimiter: ';'}))
         .pipe(new DBImporter());
 }
@@ -497,16 +513,97 @@ app.post('/uploads/gzh', function (req, res, next) {
 
 });
 
-app.post('/api/userLogout', function (req, res, next) {
-    var params = extractParams(req);
-    mysqlPool.callSP('user_logout(?)', params.sessionID, res, next);
+function delFileQuiet(file) {
+    fs.exists(file, function (exists) {
+        if (exists) {
+            fs.unlink(file, function () {
+            });
+        }
+    });
+}
+
+function removeTemplate(fileUpload) {
+    if (fileUpload instanceof Array) {
+        fileUpload.forEach(function (f) {
+            removeTemplate(f);
+        });
+    } else if (fileUpload && fileUpload.path) {
+        delFileQuiet(fileUpload.path);
+    } else if (typeof fileUpload === 'object') {
+        for (var f in fileUpload) {
+            if (fileUpload.hasOwnProperty(f)) {
+                removeTemplate(fileUpload[f]);
+            }
+        }
+    }
+}
+
+function filePathOfOrder(orderID, fileName) {
+    var sha1 = crypto.createHash('sha1');
+    sha1.update(orderID + fileName, 'utf8');
+    return path.join(__dirname, '/uploads/order-files/', sha1.digest('hex'));
+}
+
+app.post('/uploads/cart-files', function (req, res, next) {
+    var form = new multiparty.Form({
+        maxFilesSize: 5 * 1024 * 1024,
+        autoFiles: true,
+        uploadDir: path.join(__dirname, '/uploads/')
+    });
+    form.parse(req, function (err, fields, files) {
+        if (err) {
+            next(err);
+            return;
+        }
+        var file = files.file;
+        if (file) {
+            file = file[0];
+            if (file && !file.path) {
+                file = undefined;
+            }
+        }
+        if (file) {
+            var orderID = fields.orderID && fields.orderID[0];
+            mysqlPool.callSP('cart_upfile(?,?,?,?,?)', [
+                req.cookies.sessionID,
+                orderID,
+                fields.orderVersion && fields.orderVersion[0],
+                file.originalFilename,
+                file.size
+            ], res, next, function (response) {
+                if (response.inserted) {
+                    try {
+                        fs.renameSync(file.path, filePathOfOrder(orderID, response.inserted.fileName));
+                    } catch (e) {
+                        console.log(e);
+                    }
+                }
+                res.json(response);
+            }, function () {
+                removeTemplate(files);
+            })
+        } else {
+            removeTemplate(files);
+            res.json({errors: 'no file'});
+        }
+    });
+});
+
+app.post('/api/cartDelFile', function (req, res, next) {
+    var p = extractParams(req);
+    mysqlPool.callSP('cart_upfile(?,?,?,?,?)', [p.sessionID, p.orderID, p.orderVersion, p.fileName, 0], res, next, function (response) {
+        if (response.deleted) {
+            delFileQuiet(filePathOfOrder(p.orderID, response.deleted.fileName));
+        }
+        res.json(response);
+    })
 });
 
 app.get('/internal/userResetPW', function (req, res, next) {
-    mysqlPool.callSP('user_reset_pw_t(?,?)', [req.query.ticket, req.query.i], res, next, function (err, rows) {
-        if (rows) {
-            res.cookie('resetPWTicket', rows[0].ticket);
-            res.cookie('resetPWUserName', rows[0].userName);
+    mysqlPool.callSP('user_reset_pw_t(?,?)', [req.query.ticket, req.query.i], res, next, function (response) {
+        if (response.success) {
+            res.cookie('resetPWTicket', response.success.ticket);
+            res.cookie('resetPWUserName', response.success.userName);
         }
         res.redirect('/reset-pw-end.html');
     });
@@ -516,40 +613,37 @@ app.get('/internal/userResetPW', function (req, res, next) {
 app.post('/api/userResetPW', function (req, res, next) {
 
     var params = extractParams(req);
-    mysqlPool.callSP('user_reset_pw(?)', params.userName, res, next, function (err, rows) {
-        if (err) {
-            res.json({errors: err});
-            return;
+    mysqlPool.callSP('user_reset_pw(?)', params.userName, res, next, function (response) {
+        var r;
+        if (r = response.success) {
+            mailTransport.sendMail({
+                from: __mailFromTitle,
+                to: params.userName,
+                subject: "德合睿创 - 用户密码重置",
+                html: jade.renderFile(path.join(__dirname, '/mail-tpl/reset-pw.jade'), {
+                    url: app.dhrc_host + "/internal/userResetPW?ticket=" + r.ticket + "&i=" + r.userID,
+                    userName: params.userName
+                })
+            }, function (err, info) {
+                if (err) {
+                    console.log(err);
+                }
+                //??
+            });
         }
-        var r = rows[0];
-        mailTransport.sendMail({
-            from: __mailFromTitle,
-            to: params.userName,
-            subject: "德合睿创 - 用户密码重置",
-            html: jade.renderFile(path.join(__dirname, '/mail-tpl/reset-pw.jade'), {
-                url: app.dhrc_host + "/internal/userResetPW?ticket=" + r.ticket + "&i=" + r.userID,
-                userName: params.userName
-            })
-        }, function (err, info) {
-            if (err) {
-                console.log(err);
-            }
-            //??
-        });
-        res.json({success: {}});
+        res.json(response);
     });
 });
 
 
 app.post('/api/userResetPWEnd', function (req, res, next) {
     var params = extractParams(req);
-    mysqlPool.callSP('user_reset_pw_end(?,?)', [params.ticket, params.password], res, next, function (err, rows) {
-        if (err) {
-            res.json({errors: err});
-            return;
+    mysqlPool.callSP('user_reset_pw_end(?,?)', [params.ticket, params.password], res, next, function (response) {
+        var r;
+        if (r = response.success) {
+            res.cookie('sessionID', r.sessionID);
         }
-        res.cookie('sessionID', rows[0].sessionID);
-        res.json({success: {}});
+        res.json(response);
     });
 });
 
