@@ -93,7 +93,7 @@ mysqlPool.callSql = function (next, sql, params, then) {
 
 var __mailFrom = 'gao_jing_xin@126.com';
 __mailFromTitle = "德合睿创<" + __mailFrom + ">";
-__mailTeller = __mailFrom;
+__mailTeller = 'lix@csi-bj.com';
 
 var mailTransport = nodemailer.createTransport(smtpPool({
     host: 'smtp.126.com',
