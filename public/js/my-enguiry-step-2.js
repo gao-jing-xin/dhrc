@@ -260,7 +260,7 @@
                 this.title = function () {
                     if (this.uploader) {
                         return this.fileName + " (" + fileSizeStr(this.uploaded) + " / " + fileSizeStr(this.size)
-                            + " - " + Math.max((this.uploaded * 100 / this.size) | 0, 99) + '%) ';
+                            + " - " + Math.min((this.uploaded * 100 / this.size) | 0, 99) + '%) ';
                     } else {
                         return this.fileName + ' (' + fileSizeStr(this.size) + ') ';
                     }
