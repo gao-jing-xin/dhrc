@@ -89,7 +89,7 @@
             return err > 0;
         };
         Input.isEmail = function (value) {
-            return /^(\w)+(\.\w+)*@(\w)+((\.\w+)+)$/.test(value);
+            return /^\w+((\.|\-)\w+)*@\w+((\.|\-)\w+)+$/.test(value);
         };
 
         Input.isPhoneNumber = function (value) {

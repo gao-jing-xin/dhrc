@@ -21,7 +21,7 @@ process.dhrcSettings = {
         secure: true,
         auth: {
             user: 'dhrc.test@gmail.com',
-            pass: 'dhrc'
+            pass: 'dhrcdhrc'
         },
         maxConnections: 5,
         maxMessages: 500

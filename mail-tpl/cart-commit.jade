@@ -28,7 +28,7 @@ html
 
     body
         p 尊敬的<b>#{userName}</b>您好：
-        p 您已向德合睿创提交了询价申请，故系统自动将您的询价信息发送至您的邮箱备查。我们会尽快确定好报价联系您。以下是您提交的相关询价信息。
+        p 您已向德合睿创提交了询价申请，系统自动将您的询价信息发送至您的邮箱备查。我们会尽快确定好报价联系您。以下是您提交的相关询价信息。
         dl
             dt 标题
             dd #{artTitle}
@@ -51,12 +51,12 @@ html
                             td #{item.code}
                             td #{ftd(item.dateStart)}
                             td ¥#{item.price}
-                            td #{item.days}
+                            td #{item.days}天
                             td ¥#{item.days * item.price}
                     tr(class='total')
                         td 合计（#{orderItems.length}位）
                         td
                         td
                         td
-                        td #{totalDays}
+                        td #{totalDays}天
                         td ¥#{totalPrice}
