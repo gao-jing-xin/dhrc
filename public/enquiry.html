@@ -113,11 +113,13 @@
         <div>
             <div class="gzh-item" ng-class="{'selected':item.isSelected}" ng-repeat="item in gzhs">
                 <div class="gzh-icon">
-                    <a ng-href="{{item | gzhUrl}}" href="#" target="_blank"><img ng-src="{{item | gzhLogoUrl}}"></a>
+                    <a ng-href="{{item | gzhUrl}}" href="#" target="_blank">
+                        <img ng-src="{{item | gzhLogoUrl}}">
 
-                    <div class="gzh-type" ng-class="{warning:item.notFA}" tooltip="{{item | gzhWarning}}">
-                        {{item.type}}
-                    </div>
+                        <div class="gzh-type" ng-class="{warning:item.notFA}" tooltip="{{item | gzhWarning}}">
+                            {{item.type}}
+                        </div>
+                    </a>
                 </div>
                 <div class="gzh-info">
                     <div class="gzh-title"><span ng-attr-tooltip="微信ID：{{item.code}}">{{item.title}}</span></div>
