@@ -121,11 +121,12 @@
         <div>
             <div class="gzh-item" ng-repeat="item in orderItems" id="item-{{item.id}}">
                 <div class="gzh-icon">
-                    <a ng-href="{{item | gzhUrl}}" href="#" target="_blank"><img ng-src="{{item | gzhLogoUrl}}"></a>
+                    <a ng-href="{{item | gzhUrl}}" href="#" target="_blank"><img ng-src="{{item | gzhLogoUrl}}">
 
-                    <div class="gzh-type" ng-class="{warning:item.notFA}" tooltip="{{item | gzhWarning}}">
-                        {{item.type}}
-                    </div>
+                        <div class="gzh-type" ng-class="{warning:item.notFA}" tooltip="{{item | gzhWarning}}">
+                            {{item.type}}
+                        </div>
+                    </a>
                 </div>
                 <div class="gzh-info">
                     <div class="gzh-title">{{item.title}}
