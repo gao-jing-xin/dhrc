@@ -1,3 +1,11 @@
+var settings = process.dhrcSettings;
+
+if (!settings.mails.mailFromTitle) {
+    settings.mails.mailFromTitle = settings.mails.title + '<' + settings.smtp.auth.user + '>';
+}
+if (!settings.httpURL){
+    settings.httpURL = 'http://' + settings.host + (settings.port == 80 ? '' : ':' + settings.port);
+}
 var csv = require('csv');
 var stream = require('stream');
 var util = require('util');
@@ -17,14 +25,7 @@ var jade = require('jade');
 var crypto = require('crypto');
 var iconv = require('iconv-lite');
 
-var mysqlPool = mysql.createPool({
-    connectionLimit: 10,
-    host: '127.0.0.1',
-    user: 'dhrc',
-    password: 'dhrc',
-    database: "weez_wx",
-    multipleStatements: true
-});
+var mysqlPool = mysql.createPool(settings.mysql);
 
 mysqlPool.callSP = function (spName, params, res, next, then, cleanUp) {
     this.query("call " + spName, params, function (err, returns) {
@@ -91,20 +92,7 @@ mysqlPool.callSql = function (next, sql, params, then) {
     this.query(sql, params, callback);
 };
 
-var __mailFrom = 'gao_jing_xin@126.com';
-__mailFromTitle = "德合睿创<" + __mailFrom + ">";
-__mailTeller = 'lix@csi-bj.com';
-
-var mailTransport = nodemailer.createTransport(smtpPool({
-    host: 'smtp.126.com',
-    port: 25,
-    auth: {
-        user: __mailFrom,
-        pass: "zhangziyan126"
-    },
-    maxConnections: 5,
-    maxMessages: 100
-}));
+var mailTransport = nodemailer.createTransport(smtpPool(settings.smtp));
 
 var app = express();
 app.set("view engine", "jade");
@@ -116,23 +104,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-/*
- app.use(multer({
- dest: path.join(__dirname, '/uploads/'),
- rename: function (fieldname, filename) {
- return crypto.randomBytes(16).toString('hex');
- },
- onFileUploadStart: function (file) {
- file.name;
- },
- onFileUploadData: function (file, data) {
- file.name;
- },
- onFileUploadComplete: function (file) {
- file.name;
- }
- }));
- */
+
 function extractParams(req) {
     var params = req.body || {};
     if (!params.sessionID) {
@@ -224,9 +196,9 @@ app.post('/api/cartCommit', function (req, res, next) {
             });
 
             mailTransport.sendMail({
-                from: __mailFromTitle,
+                from: settings.mails.mailFromTitle,
                 to: commited.userName,
-                bcc: __mailTeller,
+                bcc: settings.mails.teller,
                 subject: "德合睿创 - 询价信息备查",
                 html: jade.renderFile(path.join(__dirname, '/mail-tpl/cart-commit.jade'), commited),
                 attachments: files
@@ -617,11 +589,11 @@ app.post('/api/userResetPW', function (req, res, next) {
         var r;
         if (r = response.success) {
             mailTransport.sendMail({
-                from: __mailFromTitle,
+                from: settings.mails.mailFromTitle,
                 to: params.userName,
                 subject: "德合睿创 - 用户密码重置",
                 html: jade.renderFile(path.join(__dirname, '/mail-tpl/reset-pw.jade'), {
-                    url: app.dhrc_host + "/internal/userResetPW?ticket=" + r.ticket + "&i=" + r.userID,
+                    url: settings.httpURL + "/internal/userResetPW?ticket=" + r.ticket + "&i=" + r.userID,
                     userName: params.userName
                 })
             }, function (err, info) {
@@ -676,11 +648,11 @@ app.post('/api/userSignIn', function (req, res, next) {
         }
         var r = rows[0];
         mailTransport.sendMail({
-            from: __mailFromTitle,
+            from: settings.mails.mailFromTitle,
             to: params.userName,
             subject: "德合睿创 - 用户注册邮件确认",
             html: jade.renderFile(path.join(__dirname, "/mail-tpl/sign-in.jade"), {
-                url: app.dhrc_host + "/internal/userVerifyEmail?ticket=" + r.ticket + "&i=" + r.userID,
+                url: settings.httpURL + "/internal/userVerifyEmail?ticket=" + r.ticket + "&i=" + r.userID,
                 userName: params.userName
             })
         }, function (err, info) {
