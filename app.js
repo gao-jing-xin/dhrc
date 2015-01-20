@@ -3,7 +3,7 @@ var settings = process.dhrcSettings;
 if (!settings.mails.mailFromTitle) {
     settings.mails.mailFromTitle = settings.mails.title + '<' + settings.smtp.auth.user + '>';
 }
-if (!settings.httpURL){
+if (!settings.httpURL) {
     settings.httpURL = 'http://' + settings.host + (settings.port == 80 ? '' : ':' + settings.port);
 }
 var csv = require('csv');
@@ -641,26 +641,24 @@ app.post('/api/userSignIn', function (req, res, next) {
         params.sex,
         params.phoneNo,
         params.qq
-    ], res, next, function (err, rows) {
-        if (err) {
-            res.json({errors: err});
-            return;
+    ], res, next, function (response) {
+        var r;
+        if (r = response.success) {
+            mailTransport.sendMail({
+                from: settings.mails.mailFromTitle,
+                to: params.userName,
+                subject: "德合睿创 - 用户注册邮件确认",
+                html: jade.renderFile(path.join(__dirname, "/mail-tpl/sign-in.jade"), {
+                    url: settings.httpURL + "/internal/userVerifyEmail?ticket=" + r.ticket + "&i=" + r.userID,
+                    userName: params.userName
+                })
+            }, function (err, info) {
+                if (err) {
+                    console.log(err);
+                }
+            });
         }
-        var r = rows[0];
-        mailTransport.sendMail({
-            from: settings.mails.mailFromTitle,
-            to: params.userName,
-            subject: "德合睿创 - 用户注册邮件确认",
-            html: jade.renderFile(path.join(__dirname, "/mail-tpl/sign-in.jade"), {
-                url: settings.httpURL + "/internal/userVerifyEmail?ticket=" + r.ticket + "&i=" + r.userID,
-                userName: params.userName
-            })
-        }, function (err, info) {
-            if (err) {
-                console.log(err);
-            }
-        });
-        res.json({success: true});
+        res.json(response);
     });
 });
 

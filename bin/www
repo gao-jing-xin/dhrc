@@ -18,11 +18,10 @@ process.dhrcSettings = {
     },
     smtp: {
         host: 'smtp.gmail.com',
-        port: 465,//ssl
-        secureConnection: true,
+        secure: true,
         auth: {
             user: 'dhrc.test@gmail.com',
-            pass: '*'
+            pass: 'dhrc'
         },
         maxConnections: 5,
         maxMessages: 500
