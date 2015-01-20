@@ -266,13 +266,7 @@ app.post('/api/gzhSave', function (req, res, next) {
         p.type,
         p.fans,
         p.price
-    ], res, next, function (err, rows) {
-        if (err) {
-            res.json({errors: err});
-            return;
-        }
-        res.json({success: rows[0]});
-    });
+    ], res, next);
 });
 
 function toSqlValue(str, t) {
@@ -663,9 +657,9 @@ app.post('/api/userSignIn', function (req, res, next) {
 });
 
 app.get('/internal/userVerifyEmail', function (req, res, next) {
-    mysqlPool.callSP('user_sign_in_v(?,?)', [req.query.ticket, req.query.i], res, next, function (err, rows) {
-        if (rows) {
-            var r = rows[0];
+    mysqlPool.callSP('user_sign_in_v(?,?)', [req.query.ticket, req.query.i], res, next, function (response) {
+        var r;
+        if (r = response.result) {
             res.cookie('verifySignInResult', r.result);
             res.cookie('verifySignInUserName', r.userName);
             if (r.sessionID) {
