@@ -198,9 +198,19 @@ app.post('/api/cartCommit', function (req, res, next) {
             mailTransport.sendMail({
                 from: settings.mails.mailFromTitle,
                 to: commited.userName,
-                bcc: settings.mails.teller,
                 subject: "德合睿创 - 询价信息备查",
-                html: jade.renderFile(path.join(__dirname, '/mail-tpl/cart-commit.jade'), commited),
+                html: jade.renderFile(path.join(__dirname, '/mail-tpl/cart-commit.jade'), commited)
+            }, function (err, info) {
+                if (err) {
+                    console.log(err);
+                }
+                //??
+            });
+            mailTransport.sendMail({
+                from: settings.mails.mailFromTitle,
+                to: settings.mails.teller,
+                subject: '询价申请 － ' + commited.userName,
+                html: jade.renderFile(path.join(__dirname, '/mail-tpl/cart-teller.jade'), commited),
                 attachments: files
             }, function (err, info) {
                 if (err) {
