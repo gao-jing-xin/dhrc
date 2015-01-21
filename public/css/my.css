@@ -99,15 +99,22 @@ body {
     border-color: #6ec8ff;
 }
 
-.gzh-icon {
+.gzh-icon, .gzh-icon2 {
     float: left;
     width: 80px;
     height: 80px;
     position: relative;
     text-align: center;
+    margin-top: 10px;
 }
 
-.gzh-icon img {
+.gzh-icon2 {
+    width: 60px;
+    height: 60px;
+    margin-top: 0;
+}
+
+.gzh-icon img, .gzh-icon2 img {
     width: 100%;
     max-width: 100%;
     max-height: 100%;
@@ -126,9 +133,11 @@ body {
     color: #fff;
     background-color: #337AB7;
 }
-.tf-days{
+
+.tf-days {
     position: relative;
 }
+
 .tf-date {
     padding: 5px 15px;
     border-radius: 10px;
@@ -205,7 +214,7 @@ body {
 }
 
 .btn-gzh {
-    margin-top: 16px;
+    margin: 34px 4px 0 0;
 }
 
 .gzh-code {
@@ -329,11 +338,6 @@ img.logo {
     height: 70px;
 }
 
-.xj-step2 .gzh-icon {
-    width: 60px;
-    height: 60px;
-}
-
 .xj-step2 .gzh-info {
     width: 300px;
 }
@@ -375,10 +379,10 @@ img.logo {
 .tf-date-group {
     margin: 20px;
 }
-.tf-date-group *{
+
+.tf-date-group * {
     margin-right: 10px;
 }
-
 
 .resultH {
     margin-top: 16px;
@@ -436,27 +440,33 @@ img.logo {
 .login-hint a {
     cursor: pointer
 }
+
 .wenan {
     border-bottom: 1px solid #f3f3f3;
     padding: 0 0 10px 0px;
 }
-.wenan *{
+
+.wenan * {
     margin-right: 10px;
 }
-.danger{
+
+.danger {
     color: #d43f3a;
 }
-.upload-file{
+
+.upload-file {
     padding: 5px 10px;
     margin-left: 5px;
     margin-right: 5px;
     border-radius: 5px;
     border: 1px solid #ccc;
 }
+
 .remove-file {
     cursor: pointer;
     margin: 5px 0 5px 5px;
 }
-.remove-file:hover{
+
+.remove-file:hover {
     font-weight: bold;
 }

@@ -122,8 +122,9 @@
                     </a>
                 </div>
                 <div class="gzh-info">
-                    <div class="gzh-title"><span ng-attr-tooltip="微信ID：{{item.code}}">{{item.title}}</span></div>
-                    <div class="gzh-fans">粉丝数：{{item.fans}}<span class="wan">万</span></div>
+                    <div class="gzh-title"><a ng-href="{{item | gzhUrl}}" href="#" target="_blank">{{item.title}}</a></div>
+                    <div class="gzh-code">微信ID：{{item.code}}</div>
+                    <div class="gzh-fans">粉丝数：{{item.fans}}万</div>
                     <div class="gzh-reads"><span tooltip="周 / 月">阅读量：{{item.rW}} / {{item.rM}}</span></div>
                 </div>
                 <div class="gzh-right">
