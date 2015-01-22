@@ -59,7 +59,7 @@
                         <div my-user-label></div>
                         <i class="glyphicon glyphicon-shopping-cart"></i>
                         <span class="badge" ng-bind="cartItemCount"></span>
-                        <span class="total-price"><span>≈¥</span><span ng-bind="totalPrice"></span></span>
+                        <span class="total-price">参考价 ¥ {{totalPrice | gzhPrice}}</span>
                         <a class="btn btn-primary" href="#" ng-click="nextStep()" ng-disabled="!nextEnabled()">下一步</a>
                     </div>
                     <div class="clear"></div>
@@ -123,12 +123,13 @@
                 </div>
                 <div class="gzh-info">
                     <div class="gzh-title"><a ng-href="{{item | gzhUrl}}" href="#" target="_blank">{{item.title}}</a></div>
-                    <div class="gzh-code">微信ID：{{item.code}}</div>
+                    <div class="gzh-fans">微信ID：{{item.code}}</div>
                     <div class="gzh-fans">粉丝数：{{item.fans}}万</div>
-                    <div class="gzh-reads"><span tooltip="周 / 月">阅读量：{{item.rW}} / {{item.rM}}</span></div>
+                    <div class="gzh-reads">一周平均阅读量：{{item | gzhRead}}</div>
                 </div>
                 <div class="gzh-right">
-                    <div class="gzh-price"><span>≈¥</span><span>{{item.price}}</span></div>
+                    <div class="gzh-ckj"><small>参考价</small></div>
+                    <div class="gzh-price">¥ {{item.price | gzhPrice}}</div>
                     <div class="btn-gzh">
                         <button class="btn btn-default btn-sm" ng-click="selectGZH(item)"
                                 ng-bind="item | gzhBtnTitle"></button>

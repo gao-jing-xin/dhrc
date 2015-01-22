@@ -160,7 +160,7 @@ body {
 
 .gzh-info {
     float: left;
-    width: 170px;
+    width: 190px;
     margin-left: 8px;
 }
 
@@ -175,25 +175,20 @@ body {
 .gzh-right {
     text-align: right;
     float: left;
-    width: 86px;
+    width: 66px;
 }
 
-.gzh-price {
-    line-height: 30px;
-}
-
-.total-price, .gzh-price {
+.total-price, .gzh-price, .gzh-ckj {
     font-size: 1.2em;
-    font-weight: bold;
     color: #d44950;
+}
+.gzh-ckj{
+    font-size: 1.1em;
+    margin-bottom: 4px;
 }
 
 .shopping-cart .badge {
     background-color: #d44950;
-}
-
-.gzh-price *, .total-price * {
-    margin-right: 4px;
 }
 
 .steps {
@@ -210,11 +205,12 @@ body {
 }
 
 .gzh-reads {
+    font-size: 0.8em;
     margin-top: 4px;
 }
 
 .btn-gzh {
-    margin: 34px 4px 0 0;
+    margin-top: 14px;
 }
 
 .gzh-code {
@@ -343,7 +339,8 @@ img.logo {
 }
 
 .xj-step2 .gzh-right {
-    float: right
+    width: 160px;
+    float: right;
 }
 
 .xj-step2 .gzh-item {
@@ -361,10 +358,11 @@ img.logo {
 
 .xj-step2 .gzh-price {
     font-size: 1.1em;
+    margin-bottom: 5px;
 }
 
 .xj-step2 .btn-gzh {
-    margin-top: 4px;
+    margin-top: 6px;
 }
 
 .xj-step3 .head-bar {

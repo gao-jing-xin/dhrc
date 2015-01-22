@@ -5,6 +5,32 @@
             return item.notFA ? '头条审核严格' : '';
         }
     });
+    m.filter("gzhPrice", function () {
+        return function (price) {
+            if (price <= 0) {
+                return '0';
+            }
+            if (price < 10000) {
+                return price.toFixed(0);
+            }
+            return (price / 10000).toFixed(2) + '万';
+        }
+    });
+    m.filter("gzhRead", function () {
+        return function (item) {
+            var ra = item.rW / 7;
+            if (ra <= 0) {
+                return '无';
+            }
+            if (item.rW < 10000) {
+                return item.rW.toFixed(0);
+            }
+            if (item.rW < 100000) {
+                return (item.rW / 10000).toFixed(2) + '万';
+            }
+            return '10万+';
+        }
+    });
     m.filter("gzhLogoUrl", function () {
         return function (item) {
             if (item.hasLogo) {
