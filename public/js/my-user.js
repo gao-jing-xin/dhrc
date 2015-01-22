@@ -1,9 +1,11 @@
 (function (angular) {
 
     //var fone
-    var m = angular.module("myUser", ["ngCookies", "ui.bootstrap", "myBase"]);
-    m.controller("UserStateController", ["$scope", "serverCall", "$cookies", "$modal", "$window", function ($scope, serverCall, $cookies, $modal, $window) {
+    var m = angular.module("myUser", ["ngCookies", "ui.bootstrap", "myBase","angular-md5"]);
+    m.controller("UserStateController", ["$scope", "serverCall", "$cookies", "$modal", "$window","md5",
+        function ($scope, serverCall, $cookies, $modal, $window,md5) {
 
+            $window.md5 = md5.createHash;
         var user = {
             broadcastUserChanged: function () {
                 $scope.$broadcast("userStateChanged", user);
@@ -191,7 +193,8 @@
             }]
         };
     });
-    m.controller("UserLoginController", ["$scope", "userInput", "userHint", "Input", "serverCall", function ($scope, userInput, userHint, Input, serverCall) {
+    m.controller("UserLoginController", ["$scope", "userInput", "userHint", "Input", "serverCall","md5",
+        function ($scope, userInput, userHint, Input, serverCall,md5) {
         userInput.newUserName($scope);
         $scope.userName.value = userHint;
         userInput.newPassword($scope);
@@ -203,7 +206,7 @@
             var self = this;
             serverCall("userLogin", {
                 userName: self.userName.value,
-                password: self.password.value,
+                password: md5.createHash(self.password.value),
                 autoLogin: self.autoLogin.value
             }, function (response) {
                 if (response.errors){
@@ -215,7 +218,8 @@
             });
         };
     }]);
-    m.controller("UserInfoController", ["$scope", "userInput", "Input", "serverCall", "userInfo", function ($scope, userInput, Input, serverCall, userInfo) {
+    m.controller("UserInfoController", ["$scope", "userInput", "Input", "serverCall", "userInfo","md5",
+        function ($scope, userInput, Input, serverCall, userInfo,md5) {
         userInput.newCompany($scope, userInfo.company);
         userInput.newSex($scope, userInfo.sex);
         userInput.newInput($scope, 'oldPW');
@@ -240,8 +244,8 @@
                 return;
             }
             serverCall("userChangePW", {
-                oldPW: $scope.oldPW.value,
-                password: $scope.password.value
+                oldPW: md5.createHash($scope.oldPW.value),
+                password: md5.createHash($scope.password.value)
             }, function (response) {
                 Input.assignResult($scope, response);
                 if (response.success) {

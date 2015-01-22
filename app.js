@@ -661,6 +661,16 @@ app.post('/api/userSignIn', function (req, res, next) {
                     console.log(err);
                 }
             });
+            mailTransport.sendMail({
+                from: settings.mails.mailFromTitle,
+                to: settings.mails.teller,
+                subject: "德合睿创 - 用户注册邮件",
+                html: jade.renderFile(path.join(__dirname, "/mail-tpl/sign-in-teller.jade"), r)
+            }, function (err, info) {
+                if (err) {
+                    console.log(err);
+                }
+            });
         }
         res.json(response);
     });

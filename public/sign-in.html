@@ -12,44 +12,46 @@
     <script src="bower_components/angular-i18n/angular-locale_zh-cn.js"></script>
     <script src="bower_components/angular-cookies/angular-cookies.min.js"></script>
     <script src="bower_components/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
+    <script src="bower_components/angular-md5/angular-md5.min.js"></script>
     <script src="bower_components/angular-bindonce/bindonce.min.js"></script>
     <script src="js/my-base.js"></script>
     <script src="js/my-user.js"></script>
     <script>
         (function () {
-            var m = angular.module("myUserSignIn", ["myBase", "myUser"]);
-            m.controller("SignInController", ["$scope", "userInput", "serverCall", "Input", function ($scope, userInput, serverCall, Input) {
-                userInput.newUserName($scope);
-                userInput.newPassword($scope);
-                userInput.newPassword2($scope);
-                userInput.newSex($scope, '男');
-                userInput.newCompany($scope);
-                userInput.newPhoneNo($scope);
-                userInput.newQQ($scope);
-                $scope.step = 1;
-                $scope.signIn = function () {
-                    if (userInput.hasError($scope.userName, $scope.password,
-                                    $scope.password2, $scope.sex, $scope.company, $scope.phoneNo, $scope.qq)) {
-                        return;
-                    }
-                    $scope.signIn.enable = false;
-                    serverCall("userSignIn", {
-                        userName: $scope.userName.value,
-                        password: $scope.password.value,
-                        company: $scope.company.value,
-                        sex: $scope.sex.value,
-                        phoneNo: $scope.phoneNo.value,
-                        qq: $scope.qq.value
-                    }, function (result) {
-                        Input.assignResult($scope, result);
-                        if (result.success) {
-                            $scope.step = 2;
+            var m = angular.module("myUserSignIn", ["myBase", "myUser", "angular-md5"]);
+            m.controller("SignInController", ["$scope", "userInput", "serverCall", "Input", "md5",
+                function ($scope, userInput, serverCall, Input, md5) {
+                    userInput.newUserName($scope);
+                    userInput.newPassword($scope);
+                    userInput.newPassword2($scope);
+                    userInput.newSex($scope, '男');
+                    userInput.newCompany($scope);
+                    userInput.newPhoneNo($scope);
+                    userInput.newQQ($scope);
+                    $scope.step = 1;
+                    $scope.signIn = function () {
+                        if (userInput.hasError($scope.userName, $scope.password,
+                                        $scope.password2, $scope.sex, $scope.company, $scope.phoneNo, $scope.qq)) {
+                            return;
                         }
-                    }, function () {
-                        $scope.signIn.enable = true;
-                    });
-                };
-            }]);
+                        $scope.signIn.enable = false;
+                        serverCall("userSignIn", {
+                            userName: $scope.userName.value,
+                            password: md5.createHash($scope.password.value),
+                            company: $scope.company.value,
+                            sex: $scope.sex.value,
+                            phoneNo: $scope.phoneNo.value,
+                            qq: $scope.qq.value
+                        }, function (result) {
+                            Input.assignResult($scope, result);
+                            if (result.success) {
+                                $scope.step = 2;
+                            }
+                        }, function () {
+                            $scope.signIn.enable = true;
+                        });
+                    };
+                }]);
         })();
     </script>
 </head>

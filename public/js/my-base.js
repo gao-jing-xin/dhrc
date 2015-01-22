@@ -73,8 +73,10 @@
                 if (this.msg = this.validate()) {
                     this.state = "error";
                     return false;
+                }else{
+                    this.state = "";
+                    return true;
                 }
-                return true;
             },
             resetState: function () {
                 this.msg = "";
