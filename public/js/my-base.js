@@ -33,11 +33,7 @@
     });
     m.filter("gzhLogoUrl", function () {
         return function (item) {
-            if (item.hasLogo) {
-                return './logos/' + item.code + '.jpg';
-            } else {
-                return './logos/_default_.jpg';
-            }
+            return './logos/' + item.code.toLowerCase() + '.jpg';
         }
     });
     m.filter("or", function () {
@@ -73,7 +69,7 @@
                 if (this.msg = this.validate()) {
                     this.state = "error";
                     return false;
-                }else{
+                } else {
                     this.state = "";
                     return true;
                 }
@@ -331,3 +327,8 @@
         }
     }]);
 })(window.angular);
+
+function gzhLogoError(self) {
+    self.onerror = null;
+    self.src = "logos/_default_.jpg";
+}

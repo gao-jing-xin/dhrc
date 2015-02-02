@@ -689,7 +689,30 @@ app.get('/internal/userVerifyEmail', function (req, res, next) {
         res.redirect('/sign-in-end.html');
     });
 });
+app.get('/wxtxbxx', function (req, res, next) {
+    fs.readdir(path.join(__dirname, 'public/logos'), function (err, files) {
+        if (err) {
+            next(err);
+            return;
+        }
+        function rn(i) {
+            if (i < files.length) {
+                var file = files[i];
+                fs.rename(path.join(__dirname, 'public/logos', file), path.join(__dirname, 'public/logos', file.toLowerCase()), function (err) {
+                    if (err) {
+                        next(err);
+                        return;
+                    }
+                    rn(i + 1)
+                });
+            } else {
+                res.end("ok")
+            }
+        }
 
+        rn(0);
+    });
+});
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
     var err = new Error('Not Found');
