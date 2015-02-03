@@ -1,3 +1,7 @@
+function endsWith(str, suffix) {
+    return str.indexOf(suffix, str.length - suffix.length) !== -1;
+}
+
 var settings = process.dhrcSettings;
 
 if (!settings.mails.mailFromTitle) {
@@ -6,6 +10,7 @@ if (!settings.mails.mailFromTitle) {
 if (!settings.httpURL) {
     settings.httpURL = 'http://' + settings.host + (settings.port == 80 ? '' : ':' + settings.port);
 }
+var unzip = require('unzip');
 var csv = require('csv');
 var stream = require('stream');
 var util = require('util');
@@ -261,10 +266,10 @@ app.post('/api/gzhQuery', function (req, res, next) {
             response.gzhs = results[0];
             response.totalCount = results[1][0].totalCount;
             res.json(response);
-
         });
     });
 });
+
 app.post('/api/gzhSave', function (req, res, next) {
     var p = extractParams(req);
     mysqlPool.callSP('gzh_save(?,?,?,?,?,?,?)', [
@@ -307,20 +312,8 @@ function toSqlValue(str, t) {
     return null;
 }
 
-function importGZH(files, index, callback) {
-    if (!files.startTime) {
-        files.startTime = Date.now();
-    }
-    var fn = files[index];
-    if (!fn) {
-        mysqlPool.query('update biz_gzh gzh join (select r.gzhID, sum(r) rM, sum(if((mx.d-interval 7 day) < r.day,r.r,0))rW\
-         from biz_gzh_r r join (select gzhID,max(day) d from biz_gzh_r group by gzhID)mx\
-         on mx.gzhID = r.gzhID where (mx.d -interval 30 day) < r.day group by r.gzhID)v on v.gzhID = gzh.id\
-         set gzh.rw = ifNull(v.rw,0),gzh.rM = ifNull(v.rm,0)', function (err, results) {
-            callback(err, files.importCount);
-        });
-        return;
-    }
+function importGZH(file, callback) {
+    var importCount = 0;
     var importer = {
         dayRStart: 9,
         parseDays: function (r) {
@@ -339,9 +332,9 @@ function importGZH(files, index, callback) {
             cYear = d.getFullYear();
             cMonth = d.getMonth() + 1;
             while (dayStr = r[start++]) {
-                dayNum = /(\d*)\/(\d*)/.exec(dayStr);
-                m = dayNum[1];
-                d = dayNum[2];
+                dayNum = /(\d+)[^0-9]+(\d+)/.exec(dayStr);
+                m = dayNum && dayNum[1];
+                d = dayNum && dayNum[2];
                 if (!m || isNaN(m = Number(m)) || !d || isNaN(d = Number(d))) {
                     return;
                 }
@@ -356,32 +349,18 @@ function importGZH(files, index, callback) {
     };
 
     function DBImporter() {
-        var logos = this.logos = {};
-        try {
-            fs.readdirSync(path.join(__dirname, '/public/logos')).forEach(function (file) {
-                logos[file] = true;
-            });
-        } catch (e) {
-        }
         stream.Writable.call(this, {
             objectMode: true
         });
         this.on('finish', function () {
-            fs.unlink(fn, function () {
-            });
-            importGZH(files, index + 1, callback);
+            callback(undefined, importCount);
         });
         this.on('error', function (err) {
-            fs.unlink(fn, function () {
-            });
-            callback(err);
+            callback(err, importCount);
         });
     }
 
     util.inherits(DBImporter, stream.Writable);
-    DBImporter.prototype.hasLogo = function (code) {
-        return this.logos[code + '.jpg'];
-    };
     function decodeFID(__biz) {
         if (!__biz) {
             return null;
@@ -399,59 +378,49 @@ function importGZH(files, index, callback) {
                 callback();
                 return;
             }
-            var gzhCode = toSqlValue(record[3], 'sl');
-            mysqlPool.query('call gzh_import(?,?,?,?,?*10000,?,?,?,?)', [
-                toSqlValue(record[1], 'b'),
-                toSqlValue(record[2], 's'),
-                gzhCode,
-                toSqlValue(record[4], 's'),
-                toSqlValue(record[5], 'n'),
-                toSqlValue(record[6], 'n'),
-                toSqlValue(record[7], 's'),
-                decodeFID(toSqlValue(record[8], 's')),
-                this.hasLogo(gzhCode)
+            var rW = 0;
+            var i = importer.dayRStart + 7;
+            while (i >= importer.dayRStart) {
+                var read = record[i];
+                if (read === '100000+') {
+                    rW += 100000;
+                } else if (read) {
+                    read = Number(read);
+                    if (!isNaN(read)) {
+                        rW += read
+                    }
+                }
+                i--;
+            }
+            mysqlPool.query('call gzh_import(?,?,?,?,?*10000,?,?,?)', [
+                toSqlValue(record[1], 'b'),//isFA
+                toSqlValue(record[2], 's'),//title
+                toSqlValue(record[3], 'sl'),//code
+                toSqlValue(record[4], 's'),//type
+                toSqlValue(record[5], 'n'),//fans
+                toSqlValue(record[6], 'n'),//price
+                toSqlValue(record[7], 's'),//openid
+                rW//rW
             ], function (err, results) {
                 if (err) {
                     callback(err);
                     return;
                 }
-                var sql = [];
-                var gzhID = results[0][0].gzhID;
-                sql.push('insert into biz_gzh_r(gzhID,day,r)values\r\n');
-                sql.push(importer.days.map(function (day, index) {
-                    var read = record[index + importer.dayRStart];
-                    if (read === '无') {
-                        read = 0;
-                    } else if (read === '100000+') {
-                        read = 100000;
-                    }
-                    return mysql.format('(?,?,?)', [
-                        gzhID,
-                        day,
-                        toSqlValue(read, 'n')
-                    ]);
-                }).join(',\r\n'));
-                sql.push('\r\nON DUPLICATE KEY UPDATE r=values(r);\r\n');
-                mysqlPool.query(sql.join(''), function (err, results) {
-                    if (err) {
-                        callback(err);
-                        return;
-                    }
-                    if (!files.importCount) {
-                        files.importCount = 1;
-                    } else {
-                        files.importCount++;
-                    }
-                    callback();
-                });
+                importCount++;
+                callback();
             });
         } else {
-            importer.parseDays(record);
+            try {
+                importer.parseDays(record);
+            } catch (err) {
+                callback(err);
+                return;
+            }
             callback();
         }
     };
 
-    fs.createReadStream(fn)
+    fs.createReadStream(file.path)
         .pipe(iconv.decodeStream('gbk'))
         .pipe(csv.parse({delimiter: ';'}))
         .pipe(new DBImporter());
@@ -462,31 +431,79 @@ function importGZH(files, index, callback) {
  });
  */
 app.post('/uploads/gzh', function (req, res, next) {
-    var n, file, uploads = [];
-    if (!req.files) {
-        next(new Error('no file uploaded!'));
-        return;
-    }
-    for (n in req.files) {
-        if (req.files.hasOwnProperty(n) && (file = req.files[n]) && (file.size > 0)) {
-            uploads.push(file.path);
-        }
-    }
-    if (!uploads.length) {
-        next(new Error('no file uploaded!'));
-        return;
+    var logos = 0;
+    var gzhs = 0;
+
+    function responseOK(files) {
+        res.json({success: '成功导入' + gzhs + '条公众号信息，' + logos + '个公众号头像'});
+        removeTemplate(files)
     }
 
-    importGZH(uploads, 0, function (err, count) {
-        var msg;
-        if (err) {
-            msg = '导入失败，原因：' + err.message;
-        } else {
-            msg = '成功导入' + count + '条公众号信息';
-        }
-        res.end('<script>parent && parent.$$gzhUploaded && parent.$$gzhUploaded("' + msg + '");</script>');
+    var form = new multiparty.Form({
+        maxFilesSize: 10 * 1024 * 1024,
+        autoFiles: true,
+        uploadDir: path.join(__dirname, '/uploads/')
     });
-
+    form.parse(req, function (err, fields, files) {
+        if (err) {
+            responseOK(files);
+            return;
+        }
+        var file = files.file;
+        if (file) {
+            file = file[0];
+            if (file && !file.path) {
+                file = undefined;
+            }
+        }
+        if (file) {
+            var ofn = file.originalFilename;
+            if (endsWith(ofn, '.csv')) {
+                importGZH(file, function (err, count) {
+                    gzhs += count || 0;
+                    responseOK(files);
+                });
+            } else if (endsWith(ofn, '.jpg')) {
+                renameFile(file.path, filePathOfLogo(ofn));
+                logos += 1;
+                responseOK(files);
+            } else if (endsWith(ofn, '.zip')) {
+                var rs = fs.createReadStream(file.path)
+                    .pipe(unzip.Parse())
+                    .on('entry', function (entry) {
+                        var fileName = entry.path;
+                        var type = entry.type; // 'Directory' or 'File'
+                        var size = entry.size;
+                        if (type == 'File' && endsWith(fileName, '.jpg')) {
+                            rs.pause();
+                            entry.pipe(fs.createWriteStream(filePathOfLogo(fileName))).on("error", function (err) {
+                                rs.resume();
+                            }).on("finish", function () {
+                                rs.resume();
+                                logos += 1;
+                            });
+                        }
+                        if (type == 'File' && endsWith(fileName, '.csv')) {
+                            rs.pause();
+                            importGZH(file, function (err, count) {
+                                gzhs += count || 0;
+                                rs.resume();
+                            });
+                        } else {
+                            entry.autodrain();
+                        }
+                    }).on("error", function () {
+                        responseOK(files);
+                    }).on("finish", function () {
+                        responseOK(files);
+                    });
+            } else {
+                responseOK(files);
+            }
+        } else {
+            responseOK(files);
+        }
+    });
 });
 
 function delFileQuiet(file) {
@@ -519,6 +536,27 @@ function filePathOfOrder(orderID, fileName) {
     sha1.update(orderID + fileName, 'utf8');
     return path.join(__dirname, '/uploads/order-files/', sha1.digest('hex'));
 }
+function filePathOfLogo(fileName) {
+    var i = fileName.length - 1;
+    while (i >= 0) {
+        if (fileName.charAt(i) == '/') {
+            fileName = fileName.substr(i + 1);
+            break
+        }
+        i--
+    }
+    return path.join(__dirname, '/public/logos/', fileName.toLowerCase());
+}
+
+function renameFile(from, to) {
+    try {
+        fs.renameSync(from, to);
+        return true
+    } catch (e) {
+        console.log(e);
+        return false
+    }
+}
 
 app.post('/uploads/cart-files', function (req, res, next) {
     var form = new multiparty.Form({
@@ -548,11 +586,7 @@ app.post('/uploads/cart-files', function (req, res, next) {
                 file.size
             ], res, next, function (response) {
                 if (response.inserted) {
-                    try {
-                        fs.renameSync(file.path, filePathOfOrder(orderID, response.inserted.fileName));
-                    } catch (e) {
-                        console.log(e);
-                    }
+                    renameFile(file.path, filePathOfOrder(orderID, response.inserted.fileName));
                 }
                 res.json(response);
             }, function () {

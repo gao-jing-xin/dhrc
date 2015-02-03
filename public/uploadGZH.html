@@ -7,45 +7,122 @@
     <title>德合睿创 - 上传公众号</title>
     <link href="bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="css/my.css" rel="stylesheet">
-
     <script src="bower_components/angular/angular.min.js"></script>
     <script src="bower_components/angular-i18n/angular-locale_zh-cn.js"></script>
     <script src="bower_components/angular-cookies/angular-cookies.min.js"></script>
     <script src="bower_components/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
     <script src="bower_components/angular-md5/angular-md5.min.js"></script>
     <script src="bower_components/angular-bindonce/bindonce.min.js"></script>
+    <script>
+        FileAPI = {
+            //wrapInsideDiv: true, forceLoad: true, html5: false //to debug flash in HTML5 browsers
+        }
+    </script>
+    <script src="bower_components/ng-file-upload/angular-file-upload-all.min.js"></script>
     <script src="js/my-base.js"></script>
     <script src="js/my-user.js"></script>
     <script>
         (function () {
-            var m = angular.module("myGZHUpload", ["myBase", "myUser"]);
-            m.controller("UploadController", ["$scope", "userInput", "serverCall", "$window", function ($scope, userInput, serverCall, $window) {
-                $scope.upload = {
-                    file: '',
-                    msg: ''
-                };
-                $window.$$gzhUploaded = function (msg) {
-                    $scope.upload.msg = msg;
-                    $scope.upload.file = '';
-                    $scope.$apply();
-                };
+            var K = 1024;
+            var M = K * K;
+
+            function fileSizeStr(size) {
+                if (size >= M) {
+                    return (size / M).toFixed(2) + 'M';
+                } else if (size >= K) {
+                    return (size / K).toFixed(2) + 'K';
+                } else {
+                    return (size | 0) + 'B';
+                }
+            }
+
+            var m = angular.module("myGZHUpload", ["myBase", "myUser", "angularFileUpload"]);
+            m.controller("UploadController", ["$scope", "userInput", "serverCall", "$window", "$upload", function ($scope, userInput, serverCall, $window, $upload) {
+                function UpFile(tl) {
+                    var self = this;
+                    var fileName = '';
+                    var size = 0;
+                    var uploaded = 0;
+                    var uploader = null;
+                    this.title = function () {
+                        if (uploader) {
+                            return tl + ' - ' + fileName + " (" + fileSizeStr(uploaded) + " / " + fileSizeStr(size)
+                                    + " - " + Math.min((uploaded * 100 / size) | 0, 99) + '%) ';
+                        } else {
+                            return tl
+                        }
+                    };
+                    function onUploaded(data) {
+                        uploader = undefined;
+                        if (data.errors) {
+                            $window.alert(data.errors.error);
+                        } else if (data.success) {
+                            $window.alert(data.success);
+                        }
+                    }
+
+                    function delUpload() {
+                        if (uploader) {
+                            uploader.abort();
+                            uploader = undefined;
+                        }
+                    }
+
+                    this.upload = function (files) {
+                        var f;
+                        if (!files || !files.length || typeof (f = files[0]) !== 'object') {
+                            return;
+                        }
+                        if (files.length > 1) {
+                            $window.alert("请一次选择一个文件");
+                            return;
+                        }
+                        if (f.size > 5 * M) {
+                            $window.alert("请不要上传超过10M的附件。");
+                            return;
+                        }
+                        if (f.size == 0) {
+                            $window.alert("文件为空！");
+                            return;
+                        }
+                        fileName = f.name;
+                        size = f.size;
+                        uploader = $upload.upload({
+                            url: 'uploads/gzh',
+                            method: 'POST',
+                            data: {},
+                            file: f
+                        }).progress(function (evt) {
+                            uploaded = evt.loaded;
+                        }).success(function (data, status, headers, config) {
+                            onUploaded(data);
+                        }).error(function () {
+                            delUpload();
+                        });
+                    }
+                }
+
+                $scope.uploadGZH = new UpFile('公众号数据上传');
+                $scope.user.tryAutoLogin(function (user) {
+                    if (!user.hasLogin()) {
+                        user.showLoginDlg();
+                    }
+                });
             }]);
         })();
     </script>
 
 </head>
-<body ng-controller="UploadController">
+<body ng-controller="UserStateController">
 
-<form class="form" method="POST" action="uploads/gzh" enctype="multipart/form-data" target="hideIF">
-    <div class="form-group">
-        <label>请选择上传的csv文件</label>
-        <input type="file" name="gzh" ng-model="upload.file"/>
-    </div>
-    <button type="submit">提交</button>
-    <label ng-bind="upload.msg"></label>
+<form class="form" ng-controller="UploadController">
+    文件上传
+    <button class="btn btn-sm btn-primary" ng-file-select
+            ng-model="fff"
+            ng-file-change="uploadGZH.upload($files)"
+            accept="*.zip,*.jpg,*.csv" ng-bind="uploadGZH.title()">
+    </button>
 </form>
-
-<iframe name="hideIF" style='display:none'></iframe>
 
 </body>
 </html>

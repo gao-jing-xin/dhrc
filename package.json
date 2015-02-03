@@ -22,6 +22,7 @@
     "nodemailer": "~1.3.0",
     "nodemailer-smtp-pool": "~0.1.8",
     "serve-favicon": "~2.1.3",
+    "unzip": "^0.1.11",
     "vhost": "~3.0.0"
   }
 }
