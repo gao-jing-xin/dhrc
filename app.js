@@ -104,7 +104,9 @@ app.set("view engine", "jade");
 // uncomment after placing your favicon in /public
 //app.use(favicon(__dirname + '/public/favicon.ico'));
 app.use(compress());
-app.use(logger('dev'));
+app.use(logger('[:date[iso]] :remote-addr :method :url :status :response-time ms',{
+    skip: function (req, res) { return res.statusCode < 400 }
+}));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(cookieParser());
@@ -749,7 +751,7 @@ app.get('/wxtxbxx', function (req, res, next) {
 });
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
-    var err = new Error('Not Found');
+    var err = new Error('没有找到相关网页');
     err.status = 404;
     next(err);
 });

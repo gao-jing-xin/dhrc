@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 var debug = require('debug')('DHRC');
-
+process.env.NODE_ENV = 'production';
 process.dhrcSettings = {
     host: 'localhost',
     port: 8080,
@@ -14,21 +14,21 @@ process.dhrcSettings = {
     },
     mails:{
         title: '德合睿创',
-        teller: 'lix@csi-bj.com'
+        teller: 'gao_jing_xin@126.com'//'lix@csi-bj.com'
     },
     smtp: {
-        host: 'smtp.gmail.com',
+        host: 'smtp.126.com',//'smtp.gmail.com',
         secure: true,
         auth: {
-            user: 'dhrc.test@gmail.com',
-            pass: 'dhrcdhrc'
+            user: 'gao_jing_xin@126.com',//'dhrc.test@gmail.com',
+            pass: 'zhangziyan126'//'dhrcdhrc'
         },
         maxConnections: 5,
         maxMessages: 500
     }
 };
-
 var dhrc = require('../app');
+//var weez = require('../weez');
 var vhost = require('vhost');
 var app = require('express')();
 app.use(vhost(process.dhrcSettings.host, dhrc));
